@@ -226,7 +226,7 @@ Proprietary - MHNexus Healthcare Solutions
 
 ## 👥 Team
 
-- **MHNexus x Universiti Malaya IDP Development Team**
+- **MHNexus Development Team**
 - Chua Zhu Heng (Leader)
 - Chin Pei Kang
 - Lim Zhi Pin
