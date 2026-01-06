@@ -1,15 +1,38 @@
 # MHNexus CPG LLM Web Application
 
-A modern, AI-powered Clinical Practice Guideline (CPG) web application prototype built with React, Vite, and Tailwind CSS. This application assists healthcare providers in generating evidence-based care plans using AI recommendations.
+A modern, AI-powered Clinical Practice Guideline (CPG) web application built with React, Vite, Tailwind CSS, and Supabase. This application assists healthcare providers in generating evidence-based care plans using AI recommendations, with a comprehensive dashboard and patient management system.
 
 ![MHNexus CPG LLM](https://img.shields.io/badge/MHNexus-CPG%20LLM-0b5e3c?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-18.2-61DAFB?style=flat-square&logo=react)
 ![Vite](https://img.shields.io/badge/Vite-5.x-646CFF?style=flat-square&logo=vite)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.x-38B2AC?style=flat-square&logo=tailwind-css)
+![Supabase](https://img.shields.io/badge/Supabase-Backend-3ECF8E?style=flat-square&logo=supabase)
 
 ## 🌟 Features
 
-### Core Workflow (4-Step Process)
+### 🏠 Sidebar Navigation & Dashboard
+
+#### Dashboard
+- **Today's Schedule**: Visual timeline of patient appointments
+- **Quick Stats**: Consultations completed, pending reviews, patients seen
+- **Patient Cards**: Color-coded by priority (emergency, follow-up, regular)
+- **Start Consult**: One-click access to begin patient consultation
+- **Waiting Room Preview**: Triage queue with status indicators
+
+#### My Patients
+- **Patient Registry**: Searchable patient database
+- **Status Filters**: Active, Follow-up, Discharged tabs
+- **Quick Actions**: View history, schedule appointment, start consult
+- **Risk Indicators**: Visual badges for patient risk levels
+- **Expandable Details**: Full patient info without leaving the page
+
+#### Settings
+- **Profile Management**: Name, specialty, license, contact info
+- **Notifications**: Email, push, SMS, emergency alert preferences
+- **Appearance**: Light/Dark/System theme with 6 accent colors (Cyan, Blue, Purple, Emerald, Amber, Rose)
+- **System Config**: Session timeout, auto-save, data sync settings
+
+### 🔄 Core Workflow (4-Step Process)
 
 #### 1. Data Input Section
 - **Patient Demographics**: Name, MRN, Age, Gender, DOB, Blood Type
@@ -75,13 +98,19 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application prototype
 
 ## 🎨 Design System
 
-### Theme: Blue-Teal-Green Gradient
-- **Glassmorphism UI**: Modern translucent card design
+### Theme System
+- **Light/Dark/System Modes**: Automatic theme detection or manual selection
+- **6 Accent Colors**: Cyan (default), Blue, Purple, Emerald, Amber, Rose
+- **CSS Custom Properties**: Dynamic theming via `--accent-primary`, `--accent-hover`, `--accent-secondary`
+- **LocalStorage Persistence**: Theme and accent preferences saved across sessions
+
+### Visual Design
+- **Glassmorphism UI**: Modern translucent card design with blur effects
 - **Color Palette**: 
-  - Primary: `#d4e6f1` (light) → `#0b5e3c` (dark)
-  - Accent: Teal and green gradients
-- **Typography**: Slate colors for optimal readability
-- **Responsive**: Mobile-first design approach
+  - Light Mode: White backgrounds with subtle shadows
+  - Dark Mode: Slate-900 backgrounds with gradient accents
+- **Typography**: Optimized contrast for both themes
+- **Responsive**: Mobile-first design approach with collapsible sidebar
 
 ### UI Components
 - GlassCard, GlassPanel (glassmorphism containers)
@@ -95,13 +124,18 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application prototype
 
 ```
 src/
-├── App.jsx                 # Main application with routing
+├── App.jsx                 # Main application with sidebar routing
 ├── main.jsx                # React entry point
-├── index.css               # Tailwind CSS imports & custom styles
+├── index.css               # Tailwind CSS + theme variables
 ├── components/
 │   ├── layout/
 │   │   ├── Layout.jsx      # Header & Footer components
+│   │   ├── Sidebar.jsx     # Collapsible navigation sidebar
 │   │   └── index.js
+│   ├── pages/
+│   │   ├── Dashboard.jsx   # Main dashboard with schedule
+│   │   ├── MyPatients.jsx  # Patient registry & search
+│   │   └── Settings.jsx    # User preferences & config
 │   ├── sections/
 │   │   ├── DataInputSection.jsx
 │   │   ├── DiagnosisSection.jsx
@@ -126,12 +160,22 @@ src/
 │       ├── RegenerateButton.jsx
 │       └── index.js
 ├── context/
-│   └── AppContext.jsx      # Global state management
+│   ├── AppContext.jsx      # Global state management
+│   └── ThemeContext.jsx    # Theme & accent color management
 ├── data/
 │   ├── sampleData.js       # Demo data for testing
-│   └── clinicalRulesData.js # CDS rules database
+│   ├── clinicalRulesData.js # CDS rules database
+│   └── scheduleData.js     # Dashboard mock data
+├── lib/
+│   └── supabase.js         # Supabase client configuration
 └── utils/
     └── pdfGenerator.js     # PDF export functionality
+
+supabase/
+└── schema.sql              # Complete database schema
+
+docs/
+└── SUPABASE_SETUP.md       # Backend setup guide
 ```
 
 ## 🚀 Getting Started
@@ -183,8 +227,7 @@ npm run preview
 | react-dom | ^18.2.0 | React DOM rendering |
 | lucide-react | ^0.294.0 | Icon library |
 | jspdf | ^2.5.2 | PDF generation |
-| jspdf-autotable | ^3.8.4 | PDF table formatting |
-
+| jspdf-autotable | ^3.8.4 | PDF table formatting || @supabase/supabase-js | ^2.89.0 | Backend integration |
 ### Development Dependencies
 | Package | Version | Purpose |
 |---------|---------|---------|
@@ -210,15 +253,37 @@ npm run preview
 
 **Note**: Voice features require browser support for Web Speech API.
 
-## 🔮 Planned Backend Integration
+## � Supabase Backend Integration
 
-The UI is prepared for backend connectivity:
+The application includes complete Supabase backend setup:
+
+### Database Schema (16 Tables)
+- **profiles**: User/doctor accounts with settings
+- **patients**: Patient registry with demographics
+- **patient_allergies/comorbidities/medications**: Patient medical data
+- **appointments**: Scheduling with triage support
+- **vitals**: Vital signs with auto-status calculation
+- **consultations**: Clinical encounters
+- **diagnoses**: AI and manual diagnoses
+- **care_plans**: Treatment plans with AI integration
+- **care_plan_medications/interventions/investigations**: Plan components
+- **cds_alerts**: Clinical decision support alerts
+- **audit_log**: Complete action tracking
+- **usage_metrics**: Analytics and performance data
+
+### Storage Buckets
+- `patient-documents`: Medical documents and lab results
+- `profile-avatars`: User profile pictures
+- `care-plan-exports`: Generated PDF care plans
+
+### Setup Instructions
+See [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md) for complete setup guide.
+
+## 🔮 Planned Integrations
+
 - **AI/LLM Integration**: Diagnosis and care plan generation
-- **MPIS API**: Real patient data synchronization
-- **Analytics API**: Real usage metrics
+- **MPIS API**: Malaysian Patient Information System sync
 - **RAG System**: Feedback loop for AI improvement
-- **Authentication**: User login and role management
-- **Audit Logging**: Complete action tracking
 
 ## 📄 License
 
@@ -235,5 +300,5 @@ Proprietary - MHNexus Healthcare Solutions
 
 ---
 
-**Version**: 1.0.0 (UI Prototype)  
+**Version**: 1.1.0 (Dashboard + Supabase Integration)  
 **Last Updated**: January 2026

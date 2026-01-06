@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
-import { Header, Footer } from './components/layout';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
+import Sidebar from './components/layout/Sidebar';
 import {
   DataInputSection,
   DiagnosisSection,
   CarePlanSection,
   OutputSection,
-  DashboardSection,
 } from './components/sections';
-import { StepIndicator, GlassPanel, Button } from './components/shared';
-import { BarChart3, ClipboardList } from 'lucide-react';
+import { StepIndicator, GlassPanel } from './components/shared';
+import Dashboard from './components/pages/Dashboard';
+import MyPatients from './components/pages/MyPatients';
+import Settings from './components/pages/Settings';
 
 const steps = [
   { id: 1, label: 'Data Input' },
@@ -19,9 +21,71 @@ const steps = [
 ];
 
 function AppContent() {
-  const { state } = useApp();
+  const { state, dispatch } = useApp();
+  const { isDark } = useTheme();
   const { currentStep } = state;
-  const [activeView, setActiveView] = useState('workflow'); // 'workflow' or 'dashboard'
+  const [currentView, setCurrentView] = useState('dashboard'); // dashboard, patients, consultation, settings
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const handleNavigate = (view) => {
+    setCurrentView(view);
+  };
+
+  const handleStartConsult = (patient, triage) => {
+    // Pre-fill patient data and navigate to consultation
+    dispatch({ 
+      type: 'SET_PATIENT', 
+      payload: {
+        name: patient.name,
+        age: patient.age,
+        gender: patient.gender,
+        nsn: patient.nsn,
+        dob: '' // Can be calculated from age if needed
+      }
+    });
+    
+    // Set vitals from triage if available
+    if (triage?.vitals) {
+      const [systolic, diastolic] = triage.vitals.bp.split('/');
+      dispatch({
+        type: 'SET_VITALS',
+        payload: {
+          bloodPressureSystolic: systolic,
+          bloodPressureDiastolic: diastolic,
+          heartRate: triage.vitals.hr?.toString() || '',
+          temperature: triage.vitals.temp?.toString() || '',
+          oxygenSaturation: triage.vitals.spo2?.toString() || '',
+          respiratoryRate: '',
+          weight: '',
+          height: '',
+          bmi: ''
+        }
+      });
+    }
+    
+    // Set clinical notes from chief complaint
+    if (triage?.chiefComplaint) {
+      dispatch({
+        type: 'SET_CLINICAL_NOTES',
+        payload: `Chief Complaint: ${triage.chiefComplaint}\n\n${triage.notes || ''}`
+      });
+    }
+    
+    // Reset to step 1 and navigate to consultation
+    dispatch({ type: 'RESET' });
+    setCurrentView('consultation');
+  };
+
+  const handleNewPatient = () => {
+    dispatch({ type: 'RESET' });
+    setCurrentView('consultation');
+  };
+
+  const handleViewChart = (patient) => {
+    // For now, navigate to consultation with patient data
+    // In a full implementation, this would show a read-only chart view
+    console.log('Viewing chart for:', patient);
+  };
 
   const renderCurrentSection = () => {
     switch (currentStep) {
@@ -38,68 +102,68 @@ function AppContent() {
     }
   };
 
-  return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      
-      <main className="flex-1 py-8">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* View Toggle Tabs */}
-          <div className="flex items-center justify-center mb-6 gap-2">
-            <button
-              onClick={() => setActiveView('workflow')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all ${
-                activeView === 'workflow'
-                  ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30'
-                  : 'bg-white/60 text-slate-600 hover:bg-white/80'
-              }`}
-            >
-              <ClipboardList className="w-5 h-5" />
-              CPG Workflow
-            </button>
-            <button
-              onClick={() => setActiveView('dashboard')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all ${
-                activeView === 'dashboard'
-                  ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30'
-                  : 'bg-white/60 text-slate-600 hover:bg-white/80'
-              }`}
-            >
-              <BarChart3 className="w-5 h-5" />
-              Analytics Dashboard
-            </button>
-          </div>
+  const renderMainContent = () => {
+    switch (currentView) {
+      case 'dashboard':
+        return <Dashboard onStartConsult={handleStartConsult} />;
+      case 'patients':
+        return <MyPatients onViewChart={handleViewChart} onNewPatient={handleNewPatient} />;
+      case 'consultation':
+        return (
+          <>
+            {/* Step Indicator */}
+            <div className="mb-8">
+              <StepIndicator steps={steps} currentStep={currentStep} />
+            </div>
 
-          {activeView === 'workflow' ? (
-            <>
-              {/* Step Indicator */}
-              <div className="mb-8">
-                <StepIndicator steps={steps} currentStep={currentStep} />
-              </div>
-
-              {/* Main Content Area */}
-              <GlassPanel className="min-h-[600px]">
-                {renderCurrentSection()}
-              </GlassPanel>
-            </>
-          ) : (
+            {/* Main Content Area */}
             <GlassPanel className="min-h-[600px]">
-              <DashboardSection />
+              {renderCurrentSection()}
             </GlassPanel>
-          )}
+          </>
+        );
+      case 'settings':
+        return <Settings />;
+      default:
+        return <Dashboard onStartConsult={handleStartConsult} />;
+    }
+  };
+
+  return (
+    <div className={`min-h-screen transition-colors duration-300 ${
+      isDark 
+        ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' 
+        : 'bg-gradient-to-br from-slate-100 via-white to-slate-100'
+    }`}>
+      {/* Sidebar */}
+      <Sidebar 
+        currentView={currentView}
+        onNavigate={handleNavigate}
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+      />
+
+      {/* Main Content Area */}
+      <main 
+        className={`min-h-screen transition-all duration-300 ${
+          sidebarCollapsed ? 'ml-20' : 'ml-64'
+        }`}
+      >
+        <div className="p-6 lg:p-8">
+          {renderMainContent()}
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }
 
 function App() {
   return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+    <ThemeProvider>
+      <AppProvider>
+        <AppContent />
+      </AppProvider>
+    </ThemeProvider>
   );
 }
 
