@@ -5,16 +5,15 @@ import {
   UserPlus, 
   Settings, 
   ChevronLeft,
-  ChevronRight,
-  Stethoscope
+  ChevronRight
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
 const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, description: 'Schedule Overview' },
-  { id: 'patients', label: 'My Patients', icon: Users, description: 'Patient Registry' },
-  { id: 'consultation', label: 'Add Patient', icon: UserPlus, description: 'New Consultation' },
-  { id: 'settings', label: 'Settings', icon: Settings, description: 'Configuration' },
+  { id: 'dashboard', label: 'Home', icon: LayoutDashboard },
+  { id: 'patients', label: 'My Patients', icon: Users },
+  { id: 'consultation', label: 'Add Patient', icon: UserPlus },
+  { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
 const Sidebar = ({ currentView, onNavigate, isCollapsed, onToggleCollapse }) => {
@@ -31,14 +30,15 @@ const Sidebar = ({ currentView, onNavigate, isCollapsed, onToggleCollapse }) => 
     >
       {/* Logo Section */}
       <div className={`p-4 flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} ${isDark ? 'border-b border-white/10' : 'border-b border-slate-200'}`}>
-        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${accent.gradient}
-          flex items-center justify-center shadow-lg ${accent.shadow}`}>
-          <Stethoscope className="w-6 h-6 text-white" />
-        </div>
+        <img 
+          src="/Image/MHNexus.png" 
+          alt="CPG LLM Logo" 
+          className="w-14 h-14 object-contain flex-shrink-0"
+        />
         {!isCollapsed && (
-          <div className="flex flex-col">
-            <span className={`font-bold text-lg ${isDark ? 'text-white' : 'text-slate-800'}`}>MHNexus</span>
-            <span className={`text-xs ${accent.text}`}>CPG Assistant</span>
+          <div className="flex flex-col min-w-0">
+            <span className={`font-bold text-lg leading-tight ${isDark ? 'text-white' : 'text-slate-800'}`}>CPG LLM</span>
+            <span className={`text-[10px] leading-tight ${accent.text} whitespace-nowrap`}>Connecting Values in Healthcare</span>
           </div>
         )}
       </div>
@@ -67,12 +67,7 @@ const Sidebar = ({ currentView, onNavigate, isCollapsed, onToggleCollapse }) => 
             >
               <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? accent.text : ''}`} />
               {!isCollapsed && (
-                <div className="flex flex-col items-start">
-                  <span className="font-medium text-sm">{item.label}</span>
-                  <span className={`text-xs ${isActive ? `${accent.text} opacity-60` : isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-                    {item.description}
-                  </span>
-                </div>
+                <span className="font-medium text-sm">{item.label}</span>
               )}
               {!isCollapsed && isActive && (
                 <div className={`ml-auto w-1.5 h-8 bg-gradient-to-b ${accent.gradient} rounded-full`} />

@@ -94,9 +94,9 @@ export const ThemeProvider = ({ children }) => {
   // Initialize from localStorage or defaults
   const [theme, setTheme] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('mhnexus-theme') || 'dark';
+      return localStorage.getItem('mhnexus-theme') || 'light';
     }
-    return 'dark';
+    return 'light';
   });
 
   const [accentColor, setAccentColor] = useState(() => {
@@ -107,7 +107,7 @@ export const ThemeProvider = ({ children }) => {
   });
 
   // Determine effective theme (for 'system' mode)
-  const [effectiveTheme, setEffectiveTheme] = useState('dark');
+  const [effectiveTheme, setEffectiveTheme] = useState('light');
 
   useEffect(() => {
     // Save to localStorage

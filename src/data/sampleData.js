@@ -84,7 +84,7 @@ export const sampleCarePlan = {
         name: "Glipizide",
         dose: "5mg OD",
         reason: "Replacing with SGLT2i for better cardiovascular and renal protection",
-        accepted: true,
+        cpgRef: "CPG-DM-2020, Pg 26",
       },
     ],
     start: [
@@ -94,7 +94,7 @@ export const sampleCarePlan = {
         dose: "10mg OD",
         reason: "SGLT2 inhibitor - provides glycemic control with cardiovascular and renal benefits",
         instructions: "Take in the morning. Review sick day rules.",
-        accepted: true,
+        cpgRef: "CPG-DM-2020, Pg 28",
       },
       {
         id: 3,
@@ -102,40 +102,53 @@ export const sampleCarePlan = {
         dose: "5mg OD",
         reason: "ACE inhibitor for renal protection and improved BP control",
         instructions: "Monitor potassium and creatinine in 2 weeks",
-        accepted: true,
+        cpgRef: "CPG-HTN-2018, Pg 42",
+      },
+    ],
+    change: [
+      {
+        id: 7,
+        name: "Metformin XR",
+        previousDose: "1000mg OD",
+        newDose: "1000mg BD",
+        reason: "Uptitrate for better glycemic control",
+        kiv: "KIV increase to 2000mg BD if tolerated",
+        cpgRef: "CPG-DM-2020, Pg 25",
       },
     ],
     continue: [
-      {
-        id: 4,
-        name: "Metformin",
-        dose: "1000mg BD",
-        reason: "First-line agent, well tolerated",
-        accepted: true,
-      },
       {
         id: 5,
         name: "Amlodipine",
         dose: "5mg OD",
         reason: "Ongoing BP management",
-        accepted: true,
+        cpgRef: "CPG-HTN-2018, Pg 35",
       },
       {
         id: 6,
         name: "Atorvastatin",
         dose: "20mg ON",
         reason: "Lipid management - consider uptitration",
-        accepted: true,
+        cpgRef: "CPG-DM-2020, Pg 32",
       },
     ],
   },
 
   monitoring: [
-    { id: 1, task: "Daily home blood glucose monitoring (fasting + post-prandial)", accepted: true },
-    { id: 2, task: "Weekly weight monitoring", accepted: true },
-    { id: 3, task: "Daily foot inspection for wounds or changes", accepted: true },
-    { id: 4, task: "Monitor for signs of UTI/genital infection (SGLT2i side effect)", accepted: true },
-    { id: 5, task: "Home BP monitoring twice daily", accepted: true },
+    { id: 1, task: "Daily home blood glucose monitoring (fasting + 2-hour post-prandial)", schedule: "Daily", accepted: true },
+    { id: 2, task: "Re-check BP at nearest clinic", schedule: "1 week", accepted: true },
+    { id: 3, task: "Repeat HbA1c", schedule: "3 months", accepted: true },
+    { id: 4, task: "Urine microalbumin/creatinine ratio", schedule: "3 months", accepted: true },
+    { id: 5, task: "Renal function panel (eGFR, Cr, K+)", schedule: "2 weeks", accepted: true },
+    { id: 6, task: "Weekly weight monitoring", schedule: "Weekly", accepted: true },
+  ],
+
+  lifestyle: [
+    { id: 1, goal: "Initiate walking program - 30 minutes, 5 days per week", category: "Exercise" },
+    { id: 2, goal: "Reduce carbohydrate intake, follow diabetic diet plan", category: "Diet" },
+    { id: 3, goal: "Target weight loss of 5-7% body weight over 6 months", category: "Weight" },
+    { id: 4, goal: "Limit sodium intake to <2g/day for blood pressure control", category: "Diet" },
+    { id: 5, goal: "Smoking cessation counseling if applicable", category: "Lifestyle" },
   ],
 
   investigations: [
@@ -149,15 +162,16 @@ export const sampleCarePlan = {
   disposition: {
     followUp: "4 weeks",
     referrals: [
-      { specialty: "Ophthalmology", reason: "Diabetic retinopathy screening", urgency: "2 weeks" },
+      { specialty: "Ophthalmology", reason: "Dilated retinal exam for diabetic retinopathy screening", urgency: "2 weeks" },
       { specialty: "Dietitian", reason: "Medical nutrition therapy for diabetes and weight management", urgency: "2 weeks" },
     ],
     patientEducation: [
-      "SGLT2 inhibitor sick day rules - stop medication during acute illness, dehydration, or fasting",
-      "Hypoglycemia recognition and management",
-      "Importance of medication compliance",
-      "Foot care and daily inspection",
-      "Signs of diabetic ketoacidosis (rare but important with SGLT2i)",
+      { text: "Reinforce compliance and explain complications of uncontrolled diabetes", category: "Compliance" },
+      { text: "SGLT2 inhibitor sick day rules - hold medication if ill, report symptoms immediately", category: "Medication" },
+      { text: "Regular foot check - daily inspection for wounds, blisters, or skin changes", category: "Self-Care" },
+      { text: "Hypoglycemia recognition and management - carry glucose tablets", category: "Safety" },
+      { text: "Signs of diabetic ketoacidosis (rare but important with SGLT2i) - nausea, vomiting, abdominal pain", category: "Safety" },
+      { text: "Importance of regular follow-up visits and lab monitoring", category: "Compliance" },
     ],
   },
 

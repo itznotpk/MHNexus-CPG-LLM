@@ -185,6 +185,12 @@ export function WorkflowActions({
       {/* Comment Input */}
       {currentStatus !== WORKFLOW_STATES.APPROVED && (
         <div className="mb-4">
+          {/* AI Feedback Info */}
+          <div className={`mb-3 p-3 rounded-lg ${isDark ? 'bg-[var(--accent-primary)]/10' : 'bg-[var(--accent-primary)]/5'}`}>
+            <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+              <span className="font-semibold">Help Improve AI Recommendations:</span> Your feedback helps our AI learn and provide better care plan recommendations. Add comments below to share your insights.
+            </p>
+          </div>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}

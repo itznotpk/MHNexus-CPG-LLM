@@ -4,11 +4,9 @@ import {
   Stethoscope,
   Pill,
   Activity,
-  FlaskConical,
   Calendar,
   BookOpen,
   Check,
-  X,
   ChevronDown,
   ChevronUp,
   FileText,
@@ -17,18 +15,15 @@ import {
   Minus,
   ArrowRight,
   Shield,
+  Heart,
 } from 'lucide-react';
 import {
   GlassCard,
   Button,
   Badge,
-  CodeBadge,
-  IconButton,
   WorkflowActions,
   WORKFLOW_STATES,
   RegenerateButton,
-  QuickFeedback,
-  FeedbackBanner,
   TextToSpeechButton,
 } from '../shared';
 import { useApp } from '../../context/AppContext';
@@ -63,34 +58,12 @@ function AccordionSection({ title, icon: Icon, children, defaultOpen = true }) {
   );
 }
 
-// Accept/Reject Toggle
-function AcceptRejectToggle({ accepted, onAccept, onReject }) {
-  return (
-    <div className="flex items-center gap-1">
-      <IconButton
-        icon={Check}
-        variant={accepted === true ? 'success' : 'ghost'}
-        size="sm"
-        onClick={onAccept}
-        title="Accept"
-      />
-      <IconButton
-        icon={X}
-        variant={accepted === false ? 'danger' : 'ghost'}
-        size="sm"
-        onClick={onReject}
-        title="Reject"
-      />
-    </div>
-  );
-}
-
 // Clinical Summary Section
 function ClinicalSummary({ summary }) {
   const { isDark } = useTheme();
   
   return (
-    <AccordionSection title="Clinical Assessment Summary" icon={FileText}>
+    <AccordionSection title="Summary" icon={FileText}>
       <div className={`p-4 rounded-xl ${isDark ? 'bg-white/10' : 'bg-white/50'}`}>
         <p className={`leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{summary}</p>
       </div>
@@ -98,38 +71,27 @@ function ClinicalSummary({ summary }) {
   );
 }
 
-// Interventions Section
-function InterventionsSection({ interventions, onUpdate }) {
+// Interventions Section (Simplified)
+function InterventionsSection({ interventions }) {
   const { isDark } = useTheme();
+  
+  if (!interventions || interventions.length === 0) return null;
   
   return (
     <AccordionSection title="Interventions & Procedures" icon={Stethoscope}>
-      <div className="space-y-3">
+      <div className="space-y-2">
         {interventions.map((item) => (
           <div
             key={item.id}
-            className={`p-4 rounded-xl transition-all duration-200 ${
-              item.accepted === false
-                ? isDark ? 'bg-red-900/30 border border-red-500/30' : 'bg-red-50/50 border border-red-200/50'
-                : isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-white/30 hover:bg-white/40'
-            }`}
+            className={`flex items-start gap-3 p-3 rounded-lg ${isDark ? 'bg-white/5' : 'bg-white/40'}`}
           >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{item.name}</span>
-                  <CodeBadge code={item.code} />
-                </div>
-                <p className={`text-sm mb-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{item.rationale}</p>
-                <Badge variant="info" size="sm">
-                  {item.urgency}
-                </Badge>
+            <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isDark ? 'text-green-400' : 'text-green-600'}`} />
+            <div className="flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{item.name}</span>
+                <Badge variant="info" size="sm">{item.urgency}</Badge>
               </div>
-              <AcceptRejectToggle
-                accepted={item.accepted}
-                onAccept={() => onUpdate('interventions', item.id, true)}
-                onReject={() => onUpdate('interventions', item.id, false)}
-              />
+              <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{item.rationale}</p>
             </div>
           </div>
         ))}
@@ -138,46 +100,31 @@ function InterventionsSection({ interventions, onUpdate }) {
   );
 }
 
-// Medications Section
-function MedicationsSection({ medications, onUpdate }) {
+// Medications Section (Simplified with CHANGE category)
+function MedicationsSection({ medications }) {
   const { isDark } = useTheme();
   
   return (
-    <AccordionSection title="Pharmacological Management" icon={Pill}>
+    <AccordionSection title="Medication Recommendations" icon={Pill}>
       <div className="space-y-4">
         {/* STOP Medications */}
-        {medications.stop.length > 0 && (
+        {medications.stop && medications.stop.length > 0 && (
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="p-1.5 bg-red-500/20 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <div className={`p-1 rounded ${isDark ? 'bg-red-500/20' : 'bg-red-100'}`}>
                 <Minus className={`w-4 h-4 ${isDark ? 'text-red-400' : 'text-red-600'}`} />
               </div>
-              <span className={`font-semibold ${isDark ? 'text-red-400' : 'text-red-700'}`}>STOP</span>
+              <span className={`font-semibold text-sm uppercase ${isDark ? 'text-red-400' : 'text-red-700'}`}>Stop</span>
             </div>
             <div className="space-y-2">
               {medications.stop.map((med) => (
-                <div
-                  key={med.id}
-                  className={`p-4 rounded-xl border-l-4 border-red-500 ${
-                    med.accepted === false 
-                      ? isDark ? 'bg-slate-700/50' : 'bg-gray-100/50' 
-                      : isDark ? 'bg-red-900/30' : 'bg-red-50/50'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{med.name}</span>
-                        <Badge variant="danger" size="sm">{med.dose}</Badge>
-                      </div>
-                      <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{med.reason}</p>
-                    </div>
-                    <AcceptRejectToggle
-                      accepted={med.accepted}
-                      onAccept={() => onUpdate('stop', med.id, true)}
-                      onReject={() => onUpdate('stop', med.id, false)}
-                    />
+                <div key={med.id} className={`p-3 rounded-lg border-l-4 border-red-500 ${isDark ? 'bg-red-900/20' : 'bg-red-50'}`}>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{med.name}</span>
+                    <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{med.dose}</span>
                   </div>
+                  <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{med.reason}</p>
+                  {med.cpgRef && <p className={`text-xs mt-1 italic ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>[{med.cpgRef}]</p>}
                 </div>
               ))}
             </div>
@@ -185,44 +132,61 @@ function MedicationsSection({ medications, onUpdate }) {
         )}
 
         {/* START Medications */}
-        {medications.start.length > 0 && (
+        {medications.start && medications.start.length > 0 && (
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="p-1.5 bg-green-500/20 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <div className={`p-1 rounded ${isDark ? 'bg-green-500/20' : 'bg-green-100'}`}>
                 <Plus className={`w-4 h-4 ${isDark ? 'text-green-400' : 'text-green-600'}`} />
               </div>
-              <span className={`font-semibold ${isDark ? 'text-green-400' : 'text-green-700'}`}>START</span>
+              <span className={`font-semibold text-sm uppercase ${isDark ? 'text-green-400' : 'text-green-700'}`}>Start</span>
             </div>
             <div className="space-y-2">
               {medications.start.map((med) => (
-                <div
-                  key={med.id}
-                  className={`p-4 rounded-xl border-l-4 border-green-500 ${
-                    med.accepted === false 
-                      ? isDark ? 'bg-slate-700/50' : 'bg-gray-100/50' 
-                      : isDark ? 'bg-green-900/30' : 'bg-green-50/50'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{med.name}</span>
-                        <Badge variant="success" size="sm">{med.dose}</Badge>
-                      </div>
-                      <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{med.reason}</p>
-                      {med.instructions && (
-                        <p className="text-xs text-amber-700 mt-1 flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3" />
-                          {med.instructions}
-                        </p>
-                      )}
-                    </div>
-                    <AcceptRejectToggle
-                      accepted={med.accepted}
-                      onAccept={() => onUpdate('start', med.id, true)}
-                      onReject={() => onUpdate('start', med.id, false)}
-                    />
+                <div key={med.id} className={`p-3 rounded-lg border-l-4 border-green-500 ${isDark ? 'bg-green-900/20' : 'bg-green-50'}`}>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{med.name}</span>
+                    <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{med.dose}</span>
                   </div>
+                  <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{med.reason}</p>
+                  {med.instructions && (
+                    <p className={`text-xs mt-1 flex items-center gap-1 ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>
+                      <AlertCircle className="w-3 h-3" />
+                      {med.instructions}
+                    </p>
+                  )}
+                  {med.cpgRef && <p className={`text-xs mt-1 italic ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>[{med.cpgRef}]</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* CHANGE Medications */}
+        {medications.change && medications.change.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className={`p-1 rounded ${isDark ? 'bg-amber-500/20' : 'bg-amber-100'}`}>
+                <ArrowRight className={`w-4 h-4 ${isDark ? 'text-amber-400' : 'text-amber-600'}`} />
+              </div>
+              <span className={`font-semibold text-sm uppercase ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>Change</span>
+            </div>
+            <div className="space-y-2">
+              {medications.change.map((med) => (
+                <div key={med.id} className={`p-3 rounded-lg border-l-4 border-amber-500 ${isDark ? 'bg-amber-900/20' : 'bg-amber-50'}`}>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{med.name}</span>
+                    <span className={`text-sm line-through ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{med.previousDose}</span>
+                    <ArrowRight className={`w-3 h-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
+                    <span className={`text-sm font-medium ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>{med.newDose}</span>
+                  </div>
+                  <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{med.reason}</p>
+                  {med.kiv && (
+                    <p className={`text-xs mt-1 flex items-center gap-1 ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>
+                      <AlertCircle className="w-3 h-3" />
+                      {med.kiv}
+                    </p>
+                  )}
+                  {med.cpgRef && <p className={`text-xs mt-1 italic ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>[{med.cpgRef}]</p>}
                 </div>
               ))}
             </div>
@@ -230,26 +194,23 @@ function MedicationsSection({ medications, onUpdate }) {
         )}
 
         {/* CONTINUE Medications */}
-        {medications.continue.length > 0 && (
+        {medications.continue && medications.continue.length > 0 && (
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="p-1.5 bg-blue-500/20 rounded-lg">
-                <ArrowRight className="w-4 h-4 text-blue-600" />
+            <div className="flex items-center gap-2 mb-2">
+              <div className={`p-1 rounded ${isDark ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
+                <Check className={`w-4 h-4 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
               </div>
-              <span className="font-semibold text-blue-700">CONTINUE</span>
+              <span className={`font-semibold text-sm uppercase ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>Continue</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {medications.continue.map((med) => (
-                <div
-                  key={med.id}
-                  className="p-3 bg-blue-50/50 rounded-xl border-l-4 border-blue-400"
-                >
+                <div key={med.id} className={`p-3 rounded-lg border-l-4 border-blue-400 ${isDark ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="font-medium text-slate-800">{med.name}</span>
-                      <span className="text-sm text-slate-600 ml-2">{med.dose}</span>
+                      <span className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{med.name}</span>
+                      <span className={`text-sm ml-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{med.dose}</span>
                     </div>
-                    <Check className="w-4 h-4 text-blue-600" />
+                    <Check className={`w-4 h-4 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
                   </div>
                 </div>
               ))}
@@ -261,35 +222,27 @@ function MedicationsSection({ medications, onUpdate }) {
   );
 }
 
-// Monitoring Section
-function MonitoringSection({ monitoring, onUpdate }) {
+// Monitoring Section (Simplified with schedules)
+function MonitoringSection({ monitoring }) {
+  const { isDark } = useTheme();
+  
+  if (!monitoring || monitoring.length === 0) return null;
+  
   return (
-    <AccordionSection title="Monitoring & Nursing Care" icon={Activity}>
+    <AccordionSection title="Monitoring & Testing" icon={Activity}>
       <div className="space-y-2">
         {monitoring.map((item) => (
           <div
             key={item.id}
-            className={`flex items-center justify-between p-3 rounded-xl transition-all ${
-              item.accepted === false
-                ? 'bg-red-50/50 border border-red-200/50'
-                : 'bg-white/30 hover:bg-white/40'
-            }`}
+            className={`flex items-center justify-between p-3 rounded-lg ${isDark ? 'bg-white/5' : 'bg-white/40'}`}
           >
             <div className="flex items-center gap-3">
-              <div
-                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                  item.accepted ? 'bg-green-500 border-green-500' : 'border-slate-400'
-                }`}
-              >
-                {item.accepted && <Check className="w-3 h-3 text-white" />}
-              </div>
-              <span className="text-slate-700">{item.task}</span>
+              <Check className={`w-4 h-4 flex-shrink-0 ${isDark ? 'text-green-400' : 'text-green-600'}`} />
+              <span className={`${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{item.task}</span>
             </div>
-            <AcceptRejectToggle
-              accepted={item.accepted}
-              onAccept={() => onUpdate('monitoring', item.id, true)}
-              onReject={() => onUpdate('monitoring', item.id, false)}
-            />
+            {item.schedule && (
+              <Badge variant="info" size="sm">{item.schedule}</Badge>
+            )}
           </div>
         ))}
       </div>
@@ -297,93 +250,117 @@ function MonitoringSection({ monitoring, onUpdate }) {
   );
 }
 
-// Investigations Section
-function InvestigationsSection({ investigations, onUpdate }) {
-  return (
-    <AccordionSection title="Laboratory Investigations" icon={FlaskConical}>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {investigations.map((item) => (
-          <div
-            key={item.id}
-            className={`p-4 rounded-xl transition-all ${
-              item.accepted === false
-                ? 'bg-red-50/50 border border-red-200/50'
-                : 'bg-white/30 hover:bg-white/40'
-            }`}
-          >
-            <div className="flex items-start justify-between">
-              <div>
-                <span className="font-semibold text-slate-800">{item.name}</span>
-                <div className="flex items-center gap-2 mt-1">
-                  <CodeBadge code={item.code} />
-                  <Badge
-                    variant={item.priority === 'Urgent' ? 'danger' : 'info'}
-                    size="sm"
-                  >
-                    {item.priority}
-                  </Badge>
-                </div>
-              </div>
-              <AcceptRejectToggle
-                accepted={item.accepted}
-                onAccept={() => onUpdate('investigations', item.id, true)}
-                onReject={() => onUpdate('investigations', item.id, false)}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </AccordionSection>
-  );
-}
-
-// Disposition Section
-function DispositionSection({ disposition }) {
+// Follow-Up Section
+function FollowUpSection({ followUp }) {
   const { isDark } = useTheme();
   
+  if (!followUp) return null;
+  
   return (
-    <AccordionSection title="Disposition & Follow-up" icon={Calendar}>
-      <div className="space-y-4">
-        {/* Follow-up */}
-        <div className={`p-4 rounded-xl ${isDark ? 'bg-[var(--accent-primary)]/20' : 'bg-[var(--accent-primary)]/10'}`}>
-          <div className="flex items-center gap-2 mb-2">
-            <Calendar className="w-5 h-5 text-[var(--accent-primary)]" />
-            <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Follow-up Appointment</span>
-          </div>
-          <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>TCA: {disposition.followUp}</p>
+    <AccordionSection title="Follow-up" icon={Calendar}>
+      <div className={`p-4 rounded-xl ${isDark ? 'bg-[var(--accent-primary)]/20' : 'bg-[var(--accent-primary)]/10'}`}>
+        <div className="flex items-center gap-2 mb-2">
+          <Calendar className="w-5 h-5 text-[var(--accent-primary)]" />
+          <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Follow-up Appointment</span>
         </div>
+        <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>TCA: {followUp}</p>
+      </div>
+    </AccordionSection>
+  );
+}
 
-        {/* Referrals */}
-        <div>
-          <h4 className="font-medium text-slate-800 mb-2">Referrals</h4>
-          <div className="space-y-2">
-            {disposition.referrals.map((ref, idx) => (
-              <div key={idx} className="p-3 bg-white/30 rounded-xl">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-slate-800">{ref.specialty}</span>
-                  <Badge variant="info" size="sm">{ref.urgency}</Badge>
-                </div>
-                <p className="text-sm text-slate-600 mt-1">{ref.reason}</p>
+// Referrals Section
+function ReferralsSection({ referrals }) {
+  const { isDark } = useTheme();
+  
+  if (!referrals || referrals.length === 0) return null;
+  
+  return (
+    <AccordionSection title="Referrals" icon={ClipboardList}>
+      <div className="space-y-2">
+        {referrals.map((ref, idx) => (
+          <div key={idx} className={`p-3 rounded-xl ${isDark ? 'bg-white/10' : 'bg-white/30'}`}>
+            <div className="flex items-center justify-between">
+              <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{ref.specialty}</span>
+              <Badge variant="info" size="sm">{ref.urgency}</Badge>
+            </div>
+            <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{ref.reason}</p>
+          </div>
+        ))}
+      </div>
+    </AccordionSection>
+  );
+}
+
+// Patient Education Section (Enhanced with categories)
+function PatientEducationSection({ education }) {
+  const { isDark } = useTheme();
+  
+  if (!education || education.length === 0) return null;
+
+  // Handle both old string format and new object format
+  const items = education.map((item, idx) => {
+    if (typeof item === 'string') {
+      return { text: item, category: 'General' };
+    }
+    return item;
+  });
+  
+  return (
+    <AccordionSection title="Patient Education & Counseling" icon={BookOpen}>
+      <div className="space-y-2">
+        {items.map((item, idx) => (
+          <div
+            key={idx}
+            className={`flex items-start gap-3 p-3 rounded-lg ${isDark ? 'bg-white/5' : 'bg-white/40'}`}
+          >
+            <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isDark ? 'text-green-400' : 'text-green-600'}`} />
+            <div className="flex-1">
+              <span className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{item.text}</span>
+              {item.category && (
+                <Badge variant="info" size="sm" className="ml-2">{item.category}</Badge>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </AccordionSection>
+  );
+}
+
+// Lifestyle & Self-Management Section (NEW)
+function LifestyleSection({ lifestyle }) {
+  const { isDark } = useTheme();
+  
+  if (!lifestyle || lifestyle.length === 0) return null;
+
+  const categoryIcons = {
+    Exercise: Activity,
+    Diet: Pill,
+    Weight: Activity,
+    Lifestyle: BookOpen,
+  };
+  
+  return (
+    <AccordionSection title="Lifestyle & Self-Management Goals" icon={Activity}>
+      <div className="space-y-2">
+        {lifestyle.map((item) => {
+          const CategoryIcon = categoryIcons[item.category] || Check;
+          return (
+            <div
+              key={item.id}
+              className={`flex items-start gap-3 p-3 rounded-lg ${isDark ? 'bg-white/5' : 'bg-white/40'}`}
+            >
+              <div className={`p-1 rounded ${isDark ? 'bg-emerald-500/20' : 'bg-emerald-100'}`}>
+                <CategoryIcon className={`w-4 h-4 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Patient Education */}
-        <div>
-          <h4 className="font-medium text-slate-800 mb-2">Patient Education</h4>
-          <ul className="space-y-2">
-            {disposition.patientEducation.map((item, idx) => (
-              <li
-                key={idx}
-                className="flex items-start gap-2 p-2 bg-white/40 rounded-lg"
-              >
-                <Check className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                <span className="text-sm text-slate-700">{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+              <div className="flex-1">
+                <span className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{item.goal}</span>
+                <Badge variant="success" size="sm" className="ml-2">{item.category}</Badge>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </AccordionSection>
   );
@@ -419,6 +396,7 @@ function CPGReferencesSection({ references }) {
 // Main Care Plan Section
 export function CarePlanSection() {
   const { state, updateCarePlanItem, updateMedication, finalizePlan, goToStep } = useApp();
+  const { isDark, accent } = useTheme();
   const { carePlan, patientData, selectedDiagnosis } = state;
   
   // Local state for workflow and notes
@@ -494,15 +472,9 @@ export function CarePlanSection() {
     <div className="space-y-4 animate-fadeIn">
       <div className="text-center mb-6">
         <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
-          AI-Generated Care Plan
+          Recommended Care Plan
         </h2>
-        <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>
-          Review and customize the evidence-based care recommendations
-        </p>
       </div>
-
-      {/* Feedback Banner */}
-      <FeedbackBanner />
 
       {/* Top Action Bar */}
       <div className={`flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl border ${
@@ -524,27 +496,34 @@ export function CarePlanSection() {
         </div>
       </div>
 
-      {/* Clinical Decision Support */}
+      {/* Summary */}
+      <ClinicalSummary summary={carePlan.clinicalSummary} />
+
+      {/* Drug Safety Alerts */}
       <ClinicalDecisionSupport />
 
-      <ClinicalSummary summary={carePlan.clinicalSummary} />
-      <InterventionsSection
-        interventions={carePlan.interventions}
-        onUpdate={updateCarePlanItem}
-      />
-      <MedicationsSection
-        medications={carePlan.medications}
-        onUpdate={updateMedication}
-      />
-      <MonitoringSection
-        monitoring={carePlan.monitoring}
-        onUpdate={updateCarePlanItem}
-      />
-      <InvestigationsSection
-        investigations={carePlan.investigations}
-        onUpdate={updateCarePlanItem}
-      />
-      <DispositionSection disposition={carePlan.disposition} />
+      {/* Medication Recommendations - Stop/Start/Change/Continue */}
+      <MedicationsSection medications={carePlan.medications} />
+
+      {/* Interventions & Procedures */}
+      <InterventionsSection interventions={carePlan.interventions} />
+
+      {/* Monitoring & Testing */}
+      <MonitoringSection monitoring={carePlan.monitoring} />
+
+      {/* Patient Education & Counseling */}
+      <PatientEducationSection education={carePlan.disposition?.patientEducation} />
+
+      {/* Referrals */}
+      <ReferralsSection referrals={carePlan.disposition?.referrals} />
+
+      {/* Lifestyle & Self-Management Goals */}
+      <LifestyleSection lifestyle={carePlan.lifestyle} />
+
+      {/* Follow-up */}
+      <FollowUpSection followUp={carePlan.disposition?.followUp} />
+
+      {/* CPG References */}
       <CPGReferencesSection references={carePlan.cpgReferences} />
 
       {/* Approval Workflow */}

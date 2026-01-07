@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Calendar, 
   Clock, 
@@ -11,18 +11,36 @@ import {
   Heart,
   Wind,
   ChevronRight,
+  ChevronDown,
   Bell,
-  RefreshCw
+  RefreshCw,
+  Filter,
+  ArrowUpDown,
+  Eye
 } from 'lucide-react';
 import { todaySchedule, dashboardStats, recentActivity } from '../../data/scheduleData';
 import { GlassCard } from '../shared/GlassCard';
 import { useTheme } from '../../context/ThemeContext';
+import { useToast } from '../shared/Notification';
+import PatientQuickView from '../shared/PatientQuickView';
 
-const Dashboard = ({ onStartConsult }) => {
+const Home = ({ onStartConsult }) => {
   const { isDark, accent } = useTheme();
+  const toast = useToast();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [schedule, setSchedule] = useState(todaySchedule);
   const [stats, setStats] = useState(dashboardStats);
+  const [isScheduleExpanded, setIsScheduleExpanded] = useState(true);
+  
+  // Filtering and sorting states
+  const [statusFilter, setStatusFilter] = useState('all'); // all, waiting, in-progress, done
+  const [sortBy, setSortBy] = useState('time'); // time, urgency
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Patient quick view modal state
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [selectedTriage, setSelectedTriage] = useState(null);
+  const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -79,13 +97,72 @@ const Dashboard = ({ onStartConsult }) => {
     return colors[status] || (isDark ? 'text-white' : 'text-slate-800');
   };
 
-  const handleStartConsult = (appointment) => {
+  // Filter and sort the schedule
+  const filteredAndSortedSchedule = useMemo(() => {
+    let filtered = [...schedule];
+    
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(apt => apt.status === statusFilter);
+    }
+    
+    // Apply sorting
+    if (sortBy === 'urgency') {
+      filtered.sort((a, b) => {
+        // Emergency first, then high risk, then others
+        const urgencyScore = (apt) => {
+          if (apt.isEmergency) return 0;
+          if (apt.isHighRisk) return 1;
+          return 2;
+        };
+        return urgencyScore(a) - urgencyScore(b);
+      });
+    } else {
+      // Sort by time (default)
+      filtered.sort((a, b) => {
+        const timeA = a.time.replace(':', '');
+        const timeB = b.time.replace(':', '');
+        return parseInt(timeA) - parseInt(timeB);
+      });
+    }
+    
+    return filtered;
+  }, [schedule, statusFilter, sortBy]);
+
+  const handleStartConsultClick = (appointment) => {
     // Update status to in-progress
     setSchedule(prev => prev.map(apt => 
       apt.id === appointment.id ? { ...apt, status: 'in-progress' } : apt
     ));
+    toast.success(`Started consultation for ${appointment.patient.name}`);
     // Navigate to consultation with patient data
     onStartConsult(appointment.patient, appointment.triage);
+  };
+
+  const handleQuickView = (appointment) => {
+    setSelectedPatient(appointment.patient);
+    setSelectedTriage(appointment.triage);
+    setIsQuickViewOpen(true);
+  };
+
+  const handleCloseQuickView = () => {
+    setIsQuickViewOpen(false);
+    setSelectedPatient(null);
+    setSelectedTriage(null);
+  };
+
+  const handleExportPDF = () => {
+    toast.success('Patient summary exported as PDF');
+  };
+
+  const handleExportCSV = () => {
+    toast.success('Patient data exported as CSV');
+  };
+
+  const handleRefresh = () => {
+    setSchedule(todaySchedule);
+    setStats(dashboardStats);
+    toast.info('Schedule refreshed');
   };
 
   return (
@@ -170,21 +247,92 @@ const Dashboard = ({ onStartConsult }) => {
         {/* Schedule Timeline - Takes 2 columns */}
         <div className="lg:col-span-2">
           <GlassCard className="p-6" variant={isDark ? 'dark' : 'light'}>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className={`text-xl font-semibold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+            <div className="flex items-center justify-between mb-4">
+              <button 
+                onClick={() => setIsScheduleExpanded(!isScheduleExpanded)}
+                className={`text-xl font-semibold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'} hover:opacity-80 transition-opacity`}
+              >
                 <Clock className={`w-5 h-5 ${accent.text}`} />
                 Today's Schedule
-              </h2>
-              <button className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all
-                ${isDark ? 'bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white' 
-                         : 'bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-800'}`}>
-                <RefreshCw className="w-4 h-4" />
-                Refresh
+                <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isScheduleExpanded ? '' : '-rotate-90'}`} />
               </button>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all
+                    ${showFilters 
+                      ? `bg-gradient-to-r ${accent.gradient} text-white` 
+                      : isDark ? 'bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white' 
+                               : 'bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-800'}`}
+                >
+                  <Filter className="w-4 h-4" />
+                  Filter
+                </button>
+                <button 
+                  onClick={handleRefresh}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all
+                    ${isDark ? 'bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white' 
+                             : 'bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-800'}`}
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Refresh
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-4">
-              {schedule.map((appointment, index) => (
+            {/* Filter Controls */}
+            {showFilters && (
+              <div className={`mb-4 p-4 rounded-lg ${isDark ? 'bg-white/5' : 'bg-slate-50'} flex flex-wrap gap-4`}>
+                <div>
+                  <label className={`text-xs font-medium uppercase mb-2 block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Filter by Status
+                  </label>
+                  <div className="flex gap-2">
+                    {['all', 'waiting', 'in-progress', 'done'].map((status) => (
+                      <button
+                        key={status}
+                        onClick={() => setStatusFilter(status)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize
+                          ${statusFilter === status 
+                            ? `bg-gradient-to-r ${accent.gradient} text-white` 
+                            : isDark ? 'bg-white/10 text-slate-300 hover:bg-white/20' 
+                                     : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}`}
+                      >
+                        {status === 'all' ? 'All' : status.replace('-', ' ')}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className={`text-xs font-medium uppercase mb-2 block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Sort by
+                  </label>
+                  <div className="flex gap-2">
+                    {[{ id: 'time', label: 'Time' }, { id: 'urgency', label: 'Urgency' }].map((option) => (
+                      <button
+                        key={option.id}
+                        onClick={() => setSortBy(option.id)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1
+                          ${sortBy === option.id 
+                            ? `bg-gradient-to-r ${accent.gradient} text-white` 
+                            : isDark ? 'bg-white/10 text-slate-300 hover:bg-white/20' 
+                                     : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}`}
+                      >
+                        <ArrowUpDown className="w-3 h-3" />
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isScheduleExpanded && <div className="space-y-4">
+              {filteredAndSortedSchedule.length === 0 ? (
+                <div className={`text-center py-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  No appointments match the current filter
+                </div>
+              ) : filteredAndSortedSchedule.map((appointment, index) => (
                 <div 
                   key={appointment.id}
                   className={`p-4 rounded-xl border transition-all
@@ -264,9 +412,20 @@ const Dashboard = ({ onStartConsult }) => {
 
                     {/* Action Button */}
                     <div className="flex flex-col gap-2">
+                      {/* Quick View Button */}
+                      <button
+                        onClick={() => handleQuickView(appointment)}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all
+                          ${isDark 
+                            ? 'bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white' 
+                            : 'bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-800'}`}
+                      >
+                        <Eye className="w-4 h-4" />
+                        Quick View
+                      </button>
                       {appointment.status === 'waiting' && (
                         <button
-                          onClick={() => handleStartConsult(appointment)}
+                          onClick={() => handleStartConsultClick(appointment)}
                           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium
                             bg-gradient-to-r ${accent.gradient} text-white
                             hover:${accent.gradientHover} transition-all shadow-lg ${accent.shadow}`}
@@ -277,7 +436,7 @@ const Dashboard = ({ onStartConsult }) => {
                       )}
                       {appointment.status === 'in-progress' && (
                         <button
-                          onClick={() => handleStartConsult(appointment)}
+                          onClick={() => handleStartConsultClick(appointment)}
                           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium
                             bg-blue-500/20 border border-blue-500/30 text-blue-500
                             hover:bg-blue-500/30 transition-all`}
@@ -295,7 +454,7 @@ const Dashboard = ({ onStartConsult }) => {
                   </div>
                 </div>
               ))}
-            </div>
+            </div>}
           </GlassCard>
         </div>
 
@@ -357,8 +516,18 @@ const Dashboard = ({ onStartConsult }) => {
           </GlassCard>
         </div>
       </div>
+
+      {/* Patient Quick View Modal */}
+      <PatientQuickView
+        patient={selectedPatient}
+        triage={selectedTriage}
+        isOpen={isQuickViewOpen}
+        onClose={handleCloseQuickView}
+        onExportPDF={handleExportPDF}
+        onExportCSV={handleExportCSV}
+      />
     </div>
   );
 };
 
-export default Dashboard;
+export default Home;

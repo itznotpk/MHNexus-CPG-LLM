@@ -127,7 +127,7 @@ function AlertCard({ type, icon: Icon, title, alerts, defaultOpen = true }) {
 // Dosage Calculator Component
 function DosageCalculator({ medications, patient, vitals }) {
   const { isDark } = useTheme();
-  const [isOpen, setIsOpen] = React.useState(true);
+  const [isOpen, setIsOpen] = React.useState(false);
   
   // Calculate eGFR (mock - would need creatinine from labs)
   const mockCreatinine = 1.2; // Would come from labs
@@ -242,8 +242,8 @@ export function ClinicalDecisionSupport() {
           <ShieldAlert className="w-5 h-5 text-red-600" />
         </div>
         <div>
-          <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Clinical Decision Support</h3>
-          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Automated safety checks and recommendations</p>
+          <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Drug Safety Alerts</h3>
+          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Drug interactions and safety alerts</p>
         </div>
         {!hasAlerts && (
           <Badge variant="success" size="md" className="ml-auto">
@@ -258,6 +258,7 @@ export function ClinicalDecisionSupport() {
           icon={Pill}
           title="Drug-Drug Interactions"
           alerts={interactions}
+          defaultOpen={false}
         />
         
         <AlertCard

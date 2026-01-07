@@ -7,3 +7,5 @@ export { VoiceInputButton, TextToSpeechButton, VoiceStatusIndicator } from './Vo
 export { NotesSection, NotesIndicator } from './NotesComments';
 export { WorkflowStatusBadge, WorkflowProgress, WorkflowActions, WorkflowIndicator, WORKFLOW_STATES } from './ApprovalWorkflow';
 export { RegenerateButton, QuickFeedback, FeedbackBanner } from './RegenerateButton';
+export { ToastProvider, useToast } from './Notification';
+export { default as PatientQuickView } from './PatientQuickView';

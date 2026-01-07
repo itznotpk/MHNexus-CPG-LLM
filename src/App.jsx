@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { ToastProvider } from './components/shared/Notification';
 import Sidebar from './components/layout/Sidebar';
 import {
   DataInputSection,
@@ -9,7 +10,7 @@ import {
   OutputSection,
 } from './components/sections';
 import { StepIndicator, GlassPanel } from './components/shared';
-import Dashboard from './components/pages/Dashboard';
+import Home from './components/pages/Home';
 import MyPatients from './components/pages/MyPatients';
 import Settings from './components/pages/Settings';
 
@@ -105,7 +106,7 @@ function AppContent() {
   const renderMainContent = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard onStartConsult={handleStartConsult} />;
+        return <Home onStartConsult={handleStartConsult} />;
       case 'patients':
         return <MyPatients onViewChart={handleViewChart} onNewPatient={handleNewPatient} />;
       case 'consultation':
@@ -125,7 +126,7 @@ function AppContent() {
       case 'settings':
         return <Settings />;
       default:
-        return <Dashboard onStartConsult={handleStartConsult} />;
+        return <Home onStartConsult={handleStartConsult} />;
     }
   };
 
@@ -161,7 +162,9 @@ function App() {
   return (
     <ThemeProvider>
       <AppProvider>
-        <AppContent />
+        <ToastProvider>
+          <AppContent />
+        </ToastProvider>
       </AppProvider>
     </ThemeProvider>
   );
