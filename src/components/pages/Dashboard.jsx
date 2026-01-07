@@ -94,7 +94,7 @@ const Dashboard = ({ onStartConsult }) => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>
-            {getGreeting()}, <span className={accent.text}>Dr. Sarah Chen</span>
+            {getGreeting()}, <span className={accent.text}>Dr. Tay</span>
           </h1>
           <div className={`flex items-center gap-4 mt-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
             <span className="flex items-center gap-2">

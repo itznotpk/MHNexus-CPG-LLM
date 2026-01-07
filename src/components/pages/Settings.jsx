@@ -32,8 +32,8 @@ const Settings = () => {
   });
 
   const [profile, setProfile] = useState({
-    name: 'Dr. Sarah Chen',
-    email: 'sarah.chen@mhnexus.com',
+    name: 'Dr. Tay',
+    email: 'dr.tay@mhnexus.com',
     phone: '+60 12-345 6789',
     specialty: 'Family Medicine',
     license: 'MMC-12345',
@@ -54,34 +54,36 @@ const Settings = () => {
         <div className="relative">
           <div className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 
             flex items-center justify-center text-white text-2xl font-bold">
-            SC
+            T
           </div>
-          <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-slate-700 
-            border-2 border-slate-800 flex items-center justify-center text-white
-            hover:bg-slate-600 transition-colors">
+          <button className={`absolute bottom-0 right-0 w-8 h-8 rounded-full 
+            border-2 flex items-center justify-center text-white
+            transition-colors ${isDark ? 'bg-slate-700 border-slate-800 hover:bg-slate-600' : 'bg-slate-500 border-slate-600 hover:bg-slate-400'}`}>
             <Camera className="w-4 h-4" />
           </button>
         </div>
         <div className="flex-1 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-slate-400 mb-2">Full Name</label>
+              <label className={`block text-sm mb-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Full Name</label>
               <input
                 type="text"
                 value={profile.name}
                 onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 
-                  text-white focus:outline-none focus:border-cyan-500/50 transition-all"
+                className={`w-full px-4 py-2.5 rounded-xl border 
+                  focus:outline-none focus:border-cyan-500/50 transition-all
+                  ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-800'}`}
               />
             </div>
             <div>
-              <label className="block text-sm text-slate-400 mb-2">Specialty</label>
+              <label className={`block text-sm mb-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Specialty</label>
               <input
                 type="text"
                 value={profile.specialty}
                 onChange={(e) => setProfile({ ...profile, specialty: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 
-                  text-white focus:outline-none focus:border-cyan-500/50 transition-all"
+                className={`w-full px-4 py-2.5 rounded-xl border 
+                  focus:outline-none focus:border-cyan-500/50 transition-all
+                  ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-800'}`}
               />
             </div>
           </div>
@@ -90,51 +92,55 @@ const Settings = () => {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm text-slate-400 mb-2 flex items-center gap-2">
+          <label className={`block text-sm mb-2 flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
             <Mail className="w-4 h-4" /> Email
           </label>
           <input
             type="email"
             value={profile.email}
             onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-            className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 
-              text-white focus:outline-none focus:border-cyan-500/50 transition-all"
+            className={`w-full px-4 py-2.5 rounded-xl border 
+              focus:outline-none focus:border-cyan-500/50 transition-all
+              ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-800'}`}
           />
         </div>
         <div>
-          <label className="block text-sm text-slate-400 mb-2 flex items-center gap-2">
+          <label className={`block text-sm mb-2 flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
             <Phone className="w-4 h-4" /> Phone
           </label>
           <input
             type="tel"
             value={profile.phone}
             onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-            className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 
-              text-white focus:outline-none focus:border-cyan-500/50 transition-all"
+            className={`w-full px-4 py-2.5 rounded-xl border 
+              focus:outline-none focus:border-cyan-500/50 transition-all
+              ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-800'}`}
           />
         </div>
         <div>
-          <label className="block text-sm text-slate-400 mb-2 flex items-center gap-2">
+          <label className={`block text-sm mb-2 flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
             <Award className="w-4 h-4" /> Medical License
           </label>
           <input
             type="text"
             value={profile.license}
             onChange={(e) => setProfile({ ...profile, license: e.target.value })}
-            className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 
-              text-white focus:outline-none focus:border-cyan-500/50 transition-all"
+            className={`w-full px-4 py-2.5 rounded-xl border 
+              focus:outline-none focus:border-cyan-500/50 transition-all
+              ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-800'}`}
           />
         </div>
         <div>
-          <label className="block text-sm text-slate-400 mb-2 flex items-center gap-2">
+          <label className={`block text-sm mb-2 flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
             <Building className="w-4 h-4" /> Facility
           </label>
           <input
             type="text"
             value={profile.facility}
             onChange={(e) => setProfile({ ...profile, facility: e.target.value })}
-            className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 
-              text-white focus:outline-none focus:border-cyan-500/50 transition-all"
+            className={`w-full px-4 py-2.5 rounded-xl border 
+              focus:outline-none focus:border-cyan-500/50 transition-all
+              ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-800'}`}
           />
         </div>
       </div>
@@ -143,7 +149,7 @@ const Settings = () => {
 
   const renderNotificationSettings = () => (
     <div className="space-y-6">
-      <p className="text-slate-400">Configure how you receive notifications and alerts.</p>
+      <p className={`${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Configure how you receive notifications and alerts.</p>
       
       <div className="space-y-4">
         {[
@@ -152,10 +158,10 @@ const Settings = () => {
           { key: 'sms', label: 'SMS Alerts', desc: 'Text message notifications' },
           { key: 'emergencyAlerts', label: 'Emergency Alerts', desc: 'Critical patient alerts (always on)' }
         ].map((item) => (
-          <div key={item.key} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
+          <div key={item.key} className={`flex items-center justify-between p-4 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200'}`}>
             <div>
-              <p className="text-white font-medium">{item.label}</p>
-              <p className="text-sm text-slate-400">{item.desc}</p>
+              <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{item.label}</p>
+              <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</p>
             </div>
             <button
               onClick={() => setNotifications({ ...notifications, [item.key]: !notifications[item.key] })}
@@ -266,67 +272,67 @@ const Settings = () => {
 
   const renderSystemSettings = () => (
     <div className="space-y-6">
-      <p className="text-slate-400">System configuration and data management.</p>
+      <p className={`${isDark ? 'text-slate-400' : 'text-slate-600'}`}>System configuration and data management.</p>
       
       <div className="space-y-4">
-        <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+        <div className={`p-4 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Database className="w-5 h-5 text-cyan-400" />
+              <Database className={`w-5 h-5 ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`} />
               <div>
-                <p className="text-white font-medium">MPIS Integration</p>
-                <p className="text-sm text-slate-400">Malaysian Patient Information System</p>
+                <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>MPIS Integration</p>
+                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Malaysian Patient Information System</p>
               </div>
             </div>
-            <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+            <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-600 border border-emerald-500/30">
               Connected
             </span>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+        <div className={`p-4 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Shield className="w-5 h-5 text-cyan-400" />
+              <Shield className={`w-5 h-5 ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`} />
               <div>
-                <p className="text-white font-medium">Security</p>
-                <p className="text-sm text-slate-400">Two-factor authentication enabled</p>
+                <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>Security</p>
+                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Two-factor authentication enabled</p>
               </div>
             </div>
-            <button className="px-3 py-1.5 rounded-lg text-sm bg-white/5 text-slate-300 
-              hover:bg-white/10 border border-white/10 transition-all">
+            <button className={`px-3 py-1.5 rounded-lg text-sm border transition-all
+              ${isDark ? 'bg-white/5 text-slate-300 hover:bg-white/10 border-white/10' : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-300'}`}>
               Manage
             </button>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+        <div className={`p-4 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Globe className="w-5 h-5 text-cyan-400" />
+              <Globe className={`w-5 h-5 ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`} />
               <div>
-                <p className="text-white font-medium">Language & Region</p>
-                <p className="text-sm text-slate-400">English (Malaysia)</p>
+                <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>Language & Region</p>
+                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>English (Malaysia)</p>
               </div>
             </div>
-            <button className="px-3 py-1.5 rounded-lg text-sm bg-white/5 text-slate-300 
-              hover:bg-white/10 border border-white/10 transition-all">
+            <button className={`px-3 py-1.5 rounded-lg text-sm border transition-all
+              ${isDark ? 'bg-white/5 text-slate-300 hover:bg-white/10 border-white/10' : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-300'}`}>
               Change
             </button>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+        <div className={`p-4 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Clock className="w-5 h-5 text-cyan-400" />
+              <Clock className={`w-5 h-5 ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`} />
               <div>
-                <p className="text-white font-medium">Session Timeout</p>
-                <p className="text-sm text-slate-400">Auto-logout after 30 minutes of inactivity</p>
+                <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>Session Timeout</p>
+                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Auto-logout after 30 minutes of inactivity</p>
               </div>
             </div>
-            <select className="px-3 py-1.5 rounded-lg text-sm bg-white/5 text-slate-300 
-              border border-white/10 focus:outline-none focus:border-cyan-500/50">
+            <select className={`px-3 py-1.5 rounded-lg text-sm border focus:outline-none focus:border-cyan-500/50
+              ${isDark ? 'bg-white/5 text-slate-300 border-white/10' : 'bg-white text-slate-600 border-slate-300'}`}>
               <option value="15">15 mins</option>
               <option value="30" selected>30 mins</option>
               <option value="60">1 hour</option>
@@ -341,8 +347,8 @@ const Settings = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-white">Settings</h1>
-        <p className="text-slate-400 mt-1">Manage your profile and system preferences</p>
+        <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>Settings</h1>
+        <p className={`mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Manage your profile and system preferences</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -357,8 +363,8 @@ const Settings = () => {
                   onClick={() => setActiveTab(tab.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left
                     ${activeTab === tab.id
-                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                      : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent'
+                      ? `bg-cyan-500/20 ${isDark ? 'text-cyan-400' : 'text-cyan-600'} border border-cyan-500/30`
+                      : `${isDark ? 'text-slate-400 hover:bg-white/5 hover:text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'} border border-transparent`
                     }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -372,7 +378,7 @@ const Settings = () => {
         {/* Settings Content */}
         <GlassCard className="p-6 lg:col-span-3">
           <div className="mb-6">
-            <h2 className="text-xl font-semibold text-white capitalize">{activeTab} Settings</h2>
+            <h2 className={`text-xl font-semibold capitalize ${isDark ? 'text-white' : 'text-slate-800'}`}>{activeTab} Settings</h2>
           </div>
 
           {activeTab === 'profile' && renderProfileSettings()}
@@ -380,8 +386,8 @@ const Settings = () => {
           {activeTab === 'appearance' && renderAppearanceSettings()}
           {activeTab === 'system' && renderSystemSettings()}
 
-          <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-white/10">
-            <button className="px-4 py-2 rounded-lg text-slate-400 hover:text-white transition-colors">
+          <div className={`flex justify-end gap-3 mt-8 pt-6 border-t ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
+            <button className={`px-4 py-2 rounded-lg transition-colors ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-800'}`}>
               Cancel
             </button>
             <button className="flex items-center gap-2 px-6 py-2 rounded-lg font-medium

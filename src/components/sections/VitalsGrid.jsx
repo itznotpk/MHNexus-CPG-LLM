@@ -2,9 +2,11 @@ import React, { useMemo } from 'react';
 import { Activity, Heart, Thermometer, Wind, Droplets, Scale, Ruler } from 'lucide-react';
 import { GlassCard, Input, Badge } from '../shared';
 import { useApp } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export function VitalsGrid() {
   const { state, dispatch, calculateBMI } = useApp();
+  const { isDark } = useTheme();
   const { vitals } = state;
 
   const handleChange = (field, value) => {
@@ -91,17 +93,17 @@ export function VitalsGrid() {
   return (
     <GlassCard className="p-5">
       <div className="flex items-center gap-3 mb-4">
-        <div className="p-2 bg-primary-500/20 rounded-xl">
-          <Activity className="w-5 h-5 text-primary-700" />
+        <div className="p-2 bg-[var(--accent-primary)]/20 rounded-xl">
+          <Activity className="w-5 h-5 text-[var(--accent-primary)]" />
         </div>
-        <h3 className="text-lg font-semibold text-slate-800">Vital Signs</h3>
+        <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Vital Signs</h3>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {vitalFields.map((vital) => (
           <div key={vital.id} className="space-y-1">
-            <label className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
-              <vital.icon className="w-4 h-4 text-primary-600" />
+            <label className={`flex items-center gap-1.5 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+              <vital.icon className="w-4 h-4 text-[var(--accent-primary)]" />
               {vital.label}
             </label>
             {vital.dual ? (
@@ -113,9 +115,13 @@ export function VitalsGrid() {
                       placeholder={field.placeholder}
                       value={vitals[field.key] || ''}
                       onChange={(e) => handleChange(field.key, e.target.value)}
-                      className="w-full px-3 py-2 bg-white/50 backdrop-blur-sm border border-white/40 rounded-lg text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-primary-300 text-sm"
+                      className={`w-full px-3 py-2 backdrop-blur-sm border rounded-lg text-sm
+                        ${isDark 
+                          ? 'bg-white/10 border-white/20 text-white placeholder-slate-400' 
+                          : 'bg-white/80 border-slate-300 text-slate-800 placeholder-slate-400'
+                        } focus:ring-2 focus:ring-[var(--accent-primary)]/50`}
                     />
-                    {idx === 0 && <span className="text-slate-600">/</span>}
+                    {idx === 0 && <span className={isDark ? 'text-slate-400' : 'text-slate-600'}>/</span>}
                   </React.Fragment>
                 ))}
               </div>
@@ -127,9 +133,13 @@ export function VitalsGrid() {
                   placeholder={vital.placeholder}
                   value={vitals[vital.key] || ''}
                   onChange={(e) => handleChange(vital.key, e.target.value)}
-                  className="w-full px-3 py-2 bg-white/50 backdrop-blur-sm border border-white/40 rounded-lg text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-primary-300 text-sm"
+                  className={`w-full px-3 py-2 backdrop-blur-sm border rounded-lg text-sm
+                    ${isDark 
+                      ? 'bg-white/10 border-white/20 text-white placeholder-slate-400' 
+                      : 'bg-white/80 border-slate-300 text-slate-800 placeholder-slate-400'
+                    } focus:ring-2 focus:ring-[var(--accent-primary)]/50`}
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-600">
+                <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                   {vital.unit}
                 </span>
               </div>
@@ -139,12 +149,12 @@ export function VitalsGrid() {
 
         {/* BMI Display */}
         <div className="space-y-1">
-          <label className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
-            <Scale className="w-4 h-4 text-primary-600" />
+          <label className={`flex items-center gap-1.5 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+            <Scale className="w-4 h-4 text-[var(--accent-primary)]" />
             BMI (Calculated)
           </label>
-          <div className="flex items-center gap-2 px-3 py-2 bg-primary-100/70 rounded-lg">
-            <span className="text-lg font-bold text-slate-800">
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isDark ? 'bg-[var(--accent-primary)]/20' : 'bg-[var(--accent-primary)]/10'}`}>
+            <span className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>
               {bmi || '--'}
             </span>
             {bmiCategory && (

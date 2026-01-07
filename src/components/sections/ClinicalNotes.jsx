@@ -2,9 +2,11 @@ import React from 'react';
 import { FileText, Sparkles } from 'lucide-react';
 import { GlassCard, TextArea, Button, VoiceInputButton, VoiceStatusIndicator } from '../shared';
 import { useApp } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export function ClinicalNotes() {
   const { state, dispatch, loadDemoData } = useApp();
+  const { isDark } = useTheme();
   const { clinicalNotes } = state;
   const [isListening, setIsListening] = React.useState(false);
 
@@ -24,10 +26,10 @@ export function ClinicalNotes() {
     <GlassCard className="p-5">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary-500/20 rounded-xl">
-            <FileText className="w-5 h-5 text-primary-700" />
+          <div className="p-2 bg-[var(--accent-primary)]/20 rounded-xl">
+            <FileText className="w-5 h-5 text-[var(--accent-primary)]" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-800">Clinical Notes</h3>
+          <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Clinical Notes</h3>
           <VoiceStatusIndicator isListening={isListening} />
         </div>
         <div className="flex items-center gap-2">

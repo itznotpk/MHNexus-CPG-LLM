@@ -32,28 +32,30 @@ import {
   TextToSpeechButton,
 } from '../shared';
 import { useApp } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 import { ClinicalDecisionSupport } from './ClinicalDecisionSupport';
 
 // Accordion Section Component
 function AccordionSection({ title, icon: Icon, children, defaultOpen = true }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  const { isDark } = useTheme();
 
   return (
     <GlassCard className="overflow-hidden">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-4 hover:bg-white/10 transition-colors"
+        className={`w-full flex items-center justify-between p-4 transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-white/10'}`}
       >
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary-500/20 rounded-xl">
-            <Icon className="w-5 h-5 text-primary-700" />
+          <div className="p-2 bg-[var(--accent-primary)]/20 rounded-xl">
+            <Icon className="w-5 h-5 text-[var(--accent-primary)]" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-800">{title}</h3>
+          <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{title}</h3>
         </div>
         {isOpen ? (
-          <ChevronUp className="w-5 h-5 text-slate-600" />
+          <ChevronUp className={`w-5 h-5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`} />
         ) : (
-          <ChevronDown className="w-5 h-5 text-slate-600" />
+          <ChevronDown className={`w-5 h-5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`} />
         )}
       </button>
       {isOpen && <div className="px-4 pb-4">{children}</div>}
@@ -85,10 +87,12 @@ function AcceptRejectToggle({ accepted, onAccept, onReject }) {
 
 // Clinical Summary Section
 function ClinicalSummary({ summary }) {
+  const { isDark } = useTheme();
+  
   return (
     <AccordionSection title="Clinical Assessment Summary" icon={FileText}>
-      <div className="p-4 bg-white/50 rounded-xl">
-        <p className="text-slate-700 leading-relaxed">{summary}</p>
+      <div className={`p-4 rounded-xl ${isDark ? 'bg-white/10' : 'bg-white/50'}`}>
+        <p className={`leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{summary}</p>
       </div>
     </AccordionSection>
   );
@@ -96,6 +100,8 @@ function ClinicalSummary({ summary }) {
 
 // Interventions Section
 function InterventionsSection({ interventions, onUpdate }) {
+  const { isDark } = useTheme();
+  
   return (
     <AccordionSection title="Interventions & Procedures" icon={Stethoscope}>
       <div className="space-y-3">
@@ -104,17 +110,17 @@ function InterventionsSection({ interventions, onUpdate }) {
             key={item.id}
             className={`p-4 rounded-xl transition-all duration-200 ${
               item.accepted === false
-                ? 'bg-red-50/50 border border-red-200/50'
-                : 'bg-white/30 hover:bg-white/40'
+                ? isDark ? 'bg-red-900/30 border border-red-500/30' : 'bg-red-50/50 border border-red-200/50'
+                : isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-white/30 hover:bg-white/40'
             }`}
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-semibold text-slate-800">{item.name}</span>
+                  <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{item.name}</span>
                   <CodeBadge code={item.code} />
                 </div>
-                <p className="text-sm text-slate-600 mb-2">{item.rationale}</p>
+                <p className={`text-sm mb-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{item.rationale}</p>
                 <Badge variant="info" size="sm">
                   {item.urgency}
                 </Badge>
@@ -134,6 +140,8 @@ function InterventionsSection({ interventions, onUpdate }) {
 
 // Medications Section
 function MedicationsSection({ medications, onUpdate }) {
+  const { isDark } = useTheme();
+  
   return (
     <AccordionSection title="Pharmacological Management" icon={Pill}>
       <div className="space-y-4">
@@ -142,25 +150,27 @@ function MedicationsSection({ medications, onUpdate }) {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <div className="p-1.5 bg-red-500/20 rounded-lg">
-                <Minus className="w-4 h-4 text-red-600" />
+                <Minus className={`w-4 h-4 ${isDark ? 'text-red-400' : 'text-red-600'}`} />
               </div>
-              <span className="font-semibold text-red-700">STOP</span>
+              <span className={`font-semibold ${isDark ? 'text-red-400' : 'text-red-700'}`}>STOP</span>
             </div>
             <div className="space-y-2">
               {medications.stop.map((med) => (
                 <div
                   key={med.id}
                   className={`p-4 rounded-xl border-l-4 border-red-500 ${
-                    med.accepted === false ? 'bg-gray-100/50' : 'bg-red-50/50'
+                    med.accepted === false 
+                      ? isDark ? 'bg-slate-700/50' : 'bg-gray-100/50' 
+                      : isDark ? 'bg-red-900/30' : 'bg-red-50/50'
                   }`}
                 >
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-800">{med.name}</span>
+                        <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{med.name}</span>
                         <Badge variant="danger" size="sm">{med.dose}</Badge>
                       </div>
-                      <p className="text-sm text-slate-600 mt-1">{med.reason}</p>
+                      <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{med.reason}</p>
                     </div>
                     <AcceptRejectToggle
                       accepted={med.accepted}
@@ -179,25 +189,27 @@ function MedicationsSection({ medications, onUpdate }) {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <div className="p-1.5 bg-green-500/20 rounded-lg">
-                <Plus className="w-4 h-4 text-green-600" />
+                <Plus className={`w-4 h-4 ${isDark ? 'text-green-400' : 'text-green-600'}`} />
               </div>
-              <span className="font-semibold text-green-700">START</span>
+              <span className={`font-semibold ${isDark ? 'text-green-400' : 'text-green-700'}`}>START</span>
             </div>
             <div className="space-y-2">
               {medications.start.map((med) => (
                 <div
                   key={med.id}
                   className={`p-4 rounded-xl border-l-4 border-green-500 ${
-                    med.accepted === false ? 'bg-gray-100/50' : 'bg-green-50/50'
+                    med.accepted === false 
+                      ? isDark ? 'bg-slate-700/50' : 'bg-gray-100/50' 
+                      : isDark ? 'bg-green-900/30' : 'bg-green-50/50'
                   }`}
                 >
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-800">{med.name}</span>
+                        <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{med.name}</span>
                         <Badge variant="success" size="sm">{med.dose}</Badge>
                       </div>
-                      <p className="text-sm text-slate-600 mt-1">{med.reason}</p>
+                      <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{med.reason}</p>
                       {med.instructions && (
                         <p className="text-xs text-amber-700 mt-1 flex items-center gap-1">
                           <AlertCircle className="w-3 h-3" />
@@ -327,16 +339,18 @@ function InvestigationsSection({ investigations, onUpdate }) {
 
 // Disposition Section
 function DispositionSection({ disposition }) {
+  const { isDark } = useTheme();
+  
   return (
     <AccordionSection title="Disposition & Follow-up" icon={Calendar}>
       <div className="space-y-4">
         {/* Follow-up */}
-        <div className="p-4 bg-primary-100/70 rounded-xl">
+        <div className={`p-4 rounded-xl ${isDark ? 'bg-[var(--accent-primary)]/20' : 'bg-[var(--accent-primary)]/10'}`}>
           <div className="flex items-center gap-2 mb-2">
-            <Calendar className="w-5 h-5 text-primary-700" />
-            <span className="font-semibold text-slate-800">Follow-up Appointment</span>
+            <Calendar className="w-5 h-5 text-[var(--accent-primary)]" />
+            <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Follow-up Appointment</span>
           </div>
-          <p className="text-lg font-bold text-slate-800">TCA: {disposition.followUp}</p>
+          <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>TCA: {disposition.followUp}</p>
         </div>
 
         {/* Referrals */}
@@ -377,16 +391,22 @@ function DispositionSection({ disposition }) {
 
 // CPG References Section
 function CPGReferencesSection({ references }) {
+  const { isDark } = useTheme();
+  
   return (
     <AccordionSection title="CPG References" icon={BookOpen} defaultOpen={false}>
       <div className="flex flex-wrap gap-2">
         {references.map((ref, idx) => (
           <button
             key={idx}
-            className="px-3 py-2 bg-primary-100/70 hover:bg-primary-200/70 rounded-xl text-sm text-slate-700 transition-colors text-left"
+            className={`px-3 py-2 rounded-xl text-sm transition-colors text-left ${
+              isDark 
+                ? 'bg-[var(--accent-primary)]/20 hover:bg-[var(--accent-primary)]/30 text-slate-200'
+                : 'bg-[var(--accent-primary)]/10 hover:bg-[var(--accent-primary)]/20 text-slate-700'
+            }`}
           >
-            <span className="font-medium text-slate-800">{ref.title}</span>
-            <span className="text-slate-600 ml-1">
+            <span className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{ref.title}</span>
+            <span className={`ml-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
               ({ref.edition}, Pg {ref.page})
             </span>
           </button>
@@ -473,10 +493,10 @@ export function CarePlanSection() {
   return (
     <div className="space-y-4 animate-fadeIn">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-primary-900 mb-2">
+        <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
           AI-Generated Care Plan
         </h2>
-        <p className="text-primary-500">
+        <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>
           Review and customize the evidence-based care recommendations
         </p>
       </div>
@@ -485,7 +505,9 @@ export function CarePlanSection() {
       <FeedbackBanner />
 
       {/* Top Action Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-white/40 rounded-xl border border-slate-200">
+      <div className={`flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl border ${
+        isDark ? 'bg-white/10 border-white/10' : 'bg-white/40 border-slate-200'
+      }`}>
         <div className="flex items-center gap-3">
           <RegenerateButton
             onRegenerate={handleRegenerate}
@@ -497,8 +519,8 @@ export function CarePlanSection() {
           />
         </div>
         <div className="flex items-center gap-2">
-          <Shield className="w-4 h-4 text-primary-600" />
-          <span className="text-sm text-slate-600">Evidence-based recommendations</span>
+          <Shield className="w-4 h-4 text-[var(--accent-primary)]" />
+          <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Evidence-based recommendations</span>
         </div>
       </div>
 

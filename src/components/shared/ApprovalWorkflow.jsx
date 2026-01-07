@@ -10,6 +10,7 @@ import {
   History
 } from 'lucide-react';
 import { Badge, Button } from '../shared';
+import { useTheme } from '../../context/ThemeContext';
 
 // Workflow States
 export const WORKFLOW_STATES = {
@@ -63,6 +64,7 @@ export function WorkflowStatusBadge({ status, size = 'md' }) {
 
 // Workflow Progress Indicator
 export function WorkflowProgress({ currentStatus }) {
+  const { isDark } = useTheme();
   const states = [WORKFLOW_STATES.DRAFT, WORKFLOW_STATES.REVIEWED, WORKFLOW_STATES.APPROVED];
   const currentIndex = states.indexOf(currentStatus);
 
@@ -77,15 +79,15 @@ export function WorkflowProgress({ currentStatus }) {
         return (
           <React.Fragment key={state}>
             <div className={`flex items-center gap-1.5 ${isCurrent ? 'opacity-100' : isComplete ? 'opacity-70' : 'opacity-40'}`}>
-              <div className={`p-1.5 rounded-full ${isCurrent ? config.color : isComplete ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-400'}`}>
+              <div className={`p-1.5 rounded-full ${isCurrent ? config.color : isComplete ? 'bg-green-100 text-green-600' : isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-400'}`}>
                 <Icon className="w-4 h-4" />
               </div>
-              <span className={`text-xs font-medium ${isCurrent ? 'text-slate-700' : 'text-slate-500'}`}>
+              <span className={`text-xs font-medium ${isCurrent ? (isDark ? 'text-slate-200' : 'text-slate-700') : (isDark ? 'text-slate-400' : 'text-slate-500')}`}>
                 {config.label}
               </span>
             </div>
             {index < states.length - 1 && (
-              <div className={`w-8 h-0.5 ${index < currentIndex ? 'bg-green-400' : 'bg-slate-200'}`} />
+              <div className={`w-8 h-0.5 ${index < currentIndex ? 'bg-green-400' : isDark ? 'bg-slate-600' : 'bg-slate-200'}`} />
             )}
           </React.Fragment>
         );
@@ -102,6 +104,7 @@ export function WorkflowActions({
   history = [],
   disabled = false 
 }) {
+  const { isDark } = useTheme();
   const [showHistory, setShowHistory] = useState(false);
   const [comment, setComment] = useState('');
 
@@ -165,10 +168,10 @@ export function WorkflowActions({
   };
 
   return (
-    <div className="bg-white/60 backdrop-blur-sm rounded-xl border border-slate-200 p-4">
+    <div className={`backdrop-blur-sm rounded-xl border p-4 ${isDark ? 'bg-white/5 border-white/10' : 'bg-white/60 border-slate-200'}`}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-          <FileEdit className="w-4 h-4 text-primary-600" />
+        <h3 className={`text-sm font-semibold flex items-center gap-2 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+          <FileEdit className="w-4 h-4 text-[var(--accent-primary)]" />
           Approval Workflow
         </h3>
         <WorkflowStatusBadge status={currentStatus} size="sm" />
@@ -186,7 +189,11 @@ export function WorkflowActions({
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             placeholder="Add a comment (optional)..."
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none bg-white/80"
+            className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50 resize-none ${
+              isDark 
+                ? 'bg-white/5 border-white/20 text-white placeholder-slate-500' 
+                : 'bg-white/80 border-slate-300 text-slate-800 placeholder-slate-400'
+            }`}
             rows={2}
           />
         </div>
@@ -212,7 +219,7 @@ export function WorkflowActions({
         {history.length > 0 && (
           <button
             onClick={() => setShowHistory(!showHistory)}
-            className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700"
+            className={`flex items-center gap-1 text-xs ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
           >
             <History className="w-3.5 h-3.5" />
             History ({history.length})
@@ -223,7 +230,7 @@ export function WorkflowActions({
 
       {/* History */}
       {showHistory && history.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-slate-200">
+        <div className={`mt-4 pt-4 border-t ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
           <div className="space-y-3">
             {history.map((item, index) => (
               <div key={index} className="flex items-start gap-3 text-sm">
@@ -232,15 +239,15 @@ export function WorkflowActions({
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium text-slate-700">{item.action}</span>
-                    <span className="text-xs text-slate-500">{item.timestamp}</span>
+                    <span className={`font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{item.action}</span>
+                    <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>{item.timestamp}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                  <div className={`flex items-center gap-2 text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                     <User className="w-3 h-3" />
                     {item.user}
                   </div>
                   {item.comment && (
-                    <p className="text-xs text-slate-600 mt-1 italic">"{item.comment}"</p>
+                    <p className={`text-xs mt-1 italic ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>"{item.comment}"</p>
                   )}
                 </div>
               </div>

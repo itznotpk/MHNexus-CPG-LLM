@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Mic, MicOff, Volume2, VolumeX, Square, Play, Pause } from 'lucide-react';
 import { Button, Badge } from '../shared';
+import { useTheme } from '../../context/ThemeContext';
 
 // Check for browser support
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -8,6 +9,7 @@ const speechSynthesis = window.speechSynthesis;
 
 // Voice Input Button Component
 export function VoiceInputButton({ onTranscript, disabled = false, className = '' }) {
+  const { isDark } = useTheme();
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(true);
   const [recognition, setRecognition] = useState(null);
@@ -103,9 +105,9 @@ export function VoiceInputButton({ onTranscript, disabled = false, className = '
       </Button>
       
       {isListening && interimTranscript && (
-        <div className="absolute top-full left-0 mt-2 p-2 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200 min-w-[200px] max-w-[300px] z-10">
-          <p className="text-xs text-slate-500 mb-1">Listening...</p>
-          <p className="text-sm text-slate-700 italic">{interimTranscript}</p>
+        <div className={`absolute top-full left-0 mt-2 p-2 backdrop-blur-sm rounded-lg shadow-lg border min-w-[200px] max-w-[300px] z-10 ${isDark ? 'bg-slate-800/90 border-white/10' : 'bg-white/90 border-slate-200'}`}>
+          <p className={`text-xs mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Listening...</p>
+          <p className={`text-sm italic ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{interimTranscript}</p>
         </div>
       )}
       

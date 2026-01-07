@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { RefreshCw, ThumbsUp, ThumbsDown, MessageSquare, Send, X, Sparkles } from 'lucide-react';
 import { Button, Badge } from '../shared';
+import { useTheme } from '../../context/ThemeContext';
 
 // Feedback options for regeneration
 const feedbackOptions = [
@@ -20,6 +21,7 @@ export function RegenerateButton({
   variant = 'secondary',
   disabled = false 
 }) {
+  const { isDark } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
   const [customFeedback, setCustomFeedback] = useState('');
@@ -65,32 +67,36 @@ export function RegenerateButton({
         <button
           onClick={() => setIsOpen(!isOpen)}
           disabled={disabled}
-          className={`p-2 rounded-lg border ${
-            isOpen ? 'bg-primary-100 border-primary-300' : 'bg-white/80 border-slate-300'
-          } hover:bg-primary-50 transition-colors disabled:opacity-50`}
+          className={`p-2 rounded-lg border transition-colors disabled:opacity-50 ${
+            isOpen 
+              ? (isDark ? 'bg-[var(--accent-primary)]/20 border-[var(--accent-primary)]/50' : 'bg-[var(--accent-primary)]/10 border-[var(--accent-primary)]/30')
+              : (isDark ? 'bg-white/5 border-white/20 hover:bg-white/10' : 'bg-white/80 border-slate-300 hover:bg-[var(--accent-primary)]/5')
+          }`}
           title="Regenerate with feedback"
         >
-          <MessageSquare className="w-4 h-4 text-primary-600" />
+          <MessageSquare className="w-4 h-4 text-[var(--accent-primary)]" />
         </button>
       </div>
 
       {/* Dropdown Panel */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden">
-          <div className="p-3 bg-gradient-to-r from-primary-50 to-teal-50 border-b border-slate-200">
+        <div className={`absolute right-0 top-full mt-2 w-72 rounded-xl shadow-xl border z-50 overflow-hidden ${
+          isDark ? 'bg-slate-800 border-white/10' : 'bg-white border-slate-200'
+        }`}>
+          <div className={`p-3 border-b ${isDark ? 'bg-[var(--accent-primary)]/10 border-white/10' : 'bg-[var(--accent-primary)]/5 border-slate-200'}`}>
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-primary-600" />
+              <h4 className={`text-sm font-semibold flex items-center gap-2 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                <Sparkles className="w-4 h-4 text-[var(--accent-primary)]" />
                 Regenerate with Feedback
               </h4>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1 hover:bg-white/50 rounded"
+                className={`p-1 rounded ${isDark ? 'hover:bg-white/10' : 'hover:bg-white/50'}`}
               >
-                <X className="w-4 h-4 text-slate-500" />
+                <X className={`w-4 h-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
               </button>
             </div>
-            <p className="text-xs text-slate-600 mt-1">
+            <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
               Your feedback helps improve AI recommendations
             </p>
           </div>
@@ -102,12 +108,12 @@ export function RegenerateButton({
                 onClick={() => setSelectedOption(option.id)}
                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
                   selectedOption === option.id
-                    ? 'bg-primary-100 border-primary-300 border'
-                    : 'hover:bg-slate-50 border border-transparent'
+                    ? (isDark ? 'bg-[var(--accent-primary)]/20 border-[var(--accent-primary)]/50 border' : 'bg-[var(--accent-primary)]/10 border-[var(--accent-primary)]/30 border')
+                    : (isDark ? 'hover:bg-white/5 border border-transparent' : 'hover:bg-slate-50 border border-transparent')
                 }`}
               >
                 <span className="text-lg">{option.icon}</span>
-                <span className="text-sm text-slate-700">{option.label}</span>
+                <span className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{option.label}</span>
                 {selectedOption === option.id && (
                   <Badge variant="primary" className="ml-auto">Selected</Badge>
                 )}
@@ -122,7 +128,11 @@ export function RegenerateButton({
                 value={customFeedback}
                 onChange={(e) => setCustomFeedback(e.target.value)}
                 placeholder="Describe what you'd like different..."
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50 resize-none ${
+                  isDark 
+                    ? 'bg-white/5 border-white/20 text-white placeholder-slate-500' 
+                    : 'border-slate-300 bg-white text-slate-800 placeholder-slate-400'
+                }`}
                 rows={2}
                 autoFocus
               />
@@ -130,7 +140,7 @@ export function RegenerateButton({
           )}
 
           {/* Action Buttons */}
-          <div className="p-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
+          <div className={`p-3 border-t flex justify-end gap-2 ${isDark ? 'bg-slate-700/50 border-white/10' : 'bg-slate-50 border-slate-200'}`}>
             <Button
               variant="secondary"
               size="sm"
@@ -160,6 +170,7 @@ export function RegenerateButton({
 
 // Quick Feedback Buttons (Thumbs up/down)
 export function QuickFeedback({ onFeedback, itemId }) {
+  const { isDark } = useTheme();
   const [feedback, setFeedback] = useState(null);
 
   const handleFeedback = (type) => {
@@ -174,7 +185,9 @@ export function QuickFeedback({ onFeedback, itemId }) {
         className={`p-1.5 rounded transition-colors ${
           feedback === 'up'
             ? 'bg-green-100 text-green-600'
-            : 'hover:bg-slate-100 text-slate-400 hover:text-green-600'
+            : isDark 
+              ? 'hover:bg-white/10 text-slate-400 hover:text-green-500'
+              : 'hover:bg-slate-100 text-slate-400 hover:text-green-600'
         }`}
         title="Helpful"
       >
@@ -185,7 +198,9 @@ export function QuickFeedback({ onFeedback, itemId }) {
         className={`p-1.5 rounded transition-colors ${
           feedback === 'down'
             ? 'bg-red-100 text-red-600'
-            : 'hover:bg-slate-100 text-slate-400 hover:text-red-600'
+            : isDark
+              ? 'hover:bg-white/10 text-slate-400 hover:text-red-500'
+              : 'hover:bg-slate-100 text-slate-400 hover:text-red-600'
         }`}
         title="Not helpful"
       >
@@ -197,20 +212,21 @@ export function QuickFeedback({ onFeedback, itemId }) {
 
 // Feedback Banner for AI Improvement
 export function FeedbackBanner({ onProvideFeedback }) {
+  const { isDark } = useTheme();
   const [isDismissed, setIsDismissed] = useState(false);
 
   if (isDismissed) return null;
 
   return (
-    <div className="bg-gradient-to-r from-primary-50 to-teal-50 rounded-lg p-4 border border-primary-200">
+    <div className={`rounded-lg p-4 border ${isDark ? 'bg-[var(--accent-primary)]/10 border-[var(--accent-primary)]/30' : 'bg-[var(--accent-primary)]/5 border-[var(--accent-primary)]/20'}`}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
-          <div className="p-2 bg-primary-100 rounded-lg">
-            <Sparkles className="w-5 h-5 text-primary-600" />
+          <div className={`p-2 rounded-lg ${isDark ? 'bg-[var(--accent-primary)]/20' : 'bg-[var(--accent-primary)]/10'}`}>
+            <Sparkles className="w-5 h-5 text-[var(--accent-primary)]" />
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-slate-700">Help Improve AI Recommendations</h4>
-            <p className="text-xs text-slate-600 mt-1">
+            <h4 className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Help Improve AI Recommendations</h4>
+            <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
               Your feedback helps our AI learn and provide better care plan recommendations. 
               Rate recommendations or regenerate with specific feedback.
             </p>
@@ -218,7 +234,7 @@ export function FeedbackBanner({ onProvideFeedback }) {
         </div>
         <button
           onClick={() => setIsDismissed(true)}
-          className="p-1 hover:bg-white/50 rounded text-slate-400 hover:text-slate-600"
+          className={`p-1 rounded ${isDark ? 'hover:bg-white/10 text-slate-400 hover:text-slate-200' : 'hover:bg-white/50 text-slate-400 hover:text-slate-600'}`}
         >
           <X className="w-4 h-4" />
         </button>

@@ -101,24 +101,26 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application built wit
 ### Theme System
 - **Light/Dark/System Modes**: Automatic theme detection or manual selection
 - **6 Accent Colors**: Cyan (default), Blue, Purple, Emerald, Amber, Rose
-- **CSS Custom Properties**: Dynamic theming via `--accent-primary`, `--accent-hover`, `--accent-secondary`
+- **CSS Custom Properties**: Dynamic theming via `--accent-primary`, `--accent-primary-hover`, `--accent-secondary`
+- **Full Accent Color Integration**: All UI components dynamically respond to accent color selection
 - **LocalStorage Persistence**: Theme and accent preferences saved across sessions
 
 ### Visual Design
-- **Glassmorphism UI**: Modern translucent card design with blur effects
+- **Glassmorphism UI**: Modern translucent card design with blur effects and accent-colored borders
 - **Color Palette**: 
-  - Light Mode: White backgrounds with subtle shadows
-  - Dark Mode: Slate-900 backgrounds with gradient accents
+  - Light Mode: White backgrounds with subtle shadows and accent highlights
+  - Dark Mode: Slate-900 backgrounds with accent-colored borders and gradient accents
 - **Typography**: Optimized contrast for both themes
 - **Responsive**: Mobile-first design approach with collapsible sidebar
+- **Dynamic Icons**: Section icons follow the selected accent color
 
-### UI Components
-- GlassCard, GlassPanel (glassmorphism containers)
-- Button (primary, secondary, success, danger, ghost, outline)
-- Badge (status, confidence, risk, code)
-- Input, TextArea, Select (form controls)
-- ProgressBar, StepIndicator (navigation)
-- Skeleton loaders (loading states)
+### UI Components (All Accent-Aware)
+- GlassCard, GlassPanel (glassmorphism containers with accent borders)
+- Button (primary, secondary, success, danger, ghost, outline - all with accent colors)
+- Badge (status, confidence, risk, code - with accent theming)
+- Input, TextArea, Select (form controls with accent focus rings)
+- ProgressBar, StepIndicator (accent-colored progress indicators)
+- Skeleton loaders (loading states with accent highlights)
 
 ## 📁 Project Structure
 
@@ -300,5 +302,5 @@ Proprietary - MHNexus Healthcare Solutions
 
 ---
 
-**Version**: 1.1.0 (Dashboard + Supabase Integration)  
-**Last Updated**: January 2026
+**Version**: 1.2.0 (Full Accent Color System + Theme Enhancements)  
+**Last Updated**: January 2025

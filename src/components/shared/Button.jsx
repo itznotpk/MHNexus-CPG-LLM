@@ -1,5 +1,6 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
 export function Button({
   children,
@@ -13,23 +14,34 @@ export function Button({
   glow = false,
   ...props
 }) {
+  const { isDark, accent } = useTheme();
+  
   const variants = {
     primary: `
-      bg-primary-500 text-white
-      hover:bg-primary-400
-      focus:ring-primary-300
-      disabled:bg-primary-300
+      bg-[var(--accent-primary)] text-white
+      hover:bg-[var(--accent-primary-hover)]
+      focus:ring-[var(--accent-primary)]/50
+      disabled:opacity-50
     `,
-    secondary: `
-      bg-primary-100/50 text-primary-700
-      hover:bg-primary-100
-      focus:ring-primary-200
-      border border-primary-300/50
+    secondary: isDark ? `
+      bg-[var(--accent-primary)]/20 text-[var(--accent-primary)]
+      hover:bg-[var(--accent-primary)]/30
+      focus:ring-[var(--accent-primary)]/30
+      border border-[var(--accent-primary)]/30
+    ` : `
+      bg-[var(--accent-primary)]/10 text-slate-700
+      hover:bg-[var(--accent-primary)]/20
+      focus:ring-[var(--accent-primary)]/30
+      border border-[var(--accent-primary)]/30
     `,
-    ghost: `
-      bg-transparent text-primary-700
-      hover:bg-primary-100/50
-      focus:ring-primary-200
+    ghost: isDark ? `
+      bg-transparent text-[var(--accent-primary)]
+      hover:bg-[var(--accent-primary)]/20
+      focus:ring-[var(--accent-primary)]/30
+    ` : `
+      bg-transparent text-slate-700
+      hover:bg-[var(--accent-primary)]/10
+      focus:ring-[var(--accent-primary)]/30
     `,
     success: `
       bg-green-500 text-white
@@ -42,10 +54,10 @@ export function Button({
       focus:ring-red-300
     `,
     outline: `
-      bg-transparent text-primary-500
-      border-2 border-primary-500
-      hover:bg-primary-500 hover:text-white
-      focus:ring-primary-300
+      bg-transparent text-[var(--accent-primary)]
+      border-2 border-[var(--accent-primary)]
+      hover:bg-[var(--accent-primary)] hover:text-white
+      focus:ring-[var(--accent-primary)]/50
     `,
   };
 
@@ -90,9 +102,13 @@ export function IconButton({
   className = '',
   ...props
 }) {
+  const { isDark } = useTheme();
+  
   const variants = {
-    primary: 'bg-primary-500 text-white hover:bg-primary-400',
-    ghost: 'bg-transparent text-primary-600 hover:bg-primary-100/50',
+    primary: 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]',
+    ghost: isDark 
+      ? 'bg-transparent text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/20'
+      : 'bg-transparent text-slate-600 hover:bg-[var(--accent-primary)]/10',
     success: 'bg-green-500/20 text-green-600 hover:bg-green-500/30',
     danger: 'bg-red-500/20 text-red-600 hover:bg-red-500/30',
   };
@@ -116,7 +132,7 @@ export function IconButton({
         ${sizes[size]}
         rounded-lg
         transition-all duration-200 ease-out
-        focus:outline-none focus:ring-2 focus:ring-primary-300 focus:ring-offset-1
+        focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50 focus:ring-offset-1
         hover:scale-110 hover:shadow-md
         active:scale-100
         ${className}

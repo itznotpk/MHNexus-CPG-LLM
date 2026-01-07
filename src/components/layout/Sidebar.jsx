@@ -55,7 +55,9 @@ const Sidebar = ({ currentView, onNavigate, isCollapsed, onToggleCollapse }) => 
               onClick={() => onNavigate(item.id)}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200
                 ${isActive 
-                  ? `bg-gradient-to-r from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/20 border border-[var(--accent-primary)]/30 ${accent.text} shadow-lg ${accent.shadow}`
+                  ? isDark
+                    ? `bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 ${accent.text}`
+                    : `bg-gradient-to-r from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/20 border border-[var(--accent-primary)]/30 ${accent.text} shadow-lg ${accent.shadow}`
                   : isDark 
                     ? 'text-slate-300 hover:bg-white/5 hover:text-white' 
                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
@@ -104,10 +106,10 @@ const Sidebar = ({ currentView, onNavigate, isCollapsed, onToggleCollapse }) => 
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${accent.gradient}
               flex items-center justify-center text-white font-bold text-sm`}>
-              SC
+              T
             </div>
             <div className="flex flex-col">
-              <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>Dr. Sarah Chen</span>
+              <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>Dr. Tay</span>
               <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Family Medicine</span>
             </div>
           </div>

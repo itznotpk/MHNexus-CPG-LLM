@@ -1,15 +1,30 @@
 import React from 'react';
 import { Check, X, AlertTriangle, Info, AlertCircle } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
 export function Badge({ children, variant = 'default', size = 'md', className = '' }) {
+  const { isDark } = useTheme();
+  
   const variants = {
-    default: 'bg-primary-100 text-primary-800 font-semibold',
-    primary: 'bg-primary-600 text-white font-semibold',
-    success: 'bg-green-100 text-green-800 font-semibold',
-    danger: 'bg-red-100 text-red-800 font-semibold',
-    warning: 'bg-amber-100 text-amber-800 font-semibold',
-    info: 'bg-blue-100 text-blue-800 font-semibold',
-    outline: 'bg-white/50 border border-primary-400 text-primary-800 font-semibold',
+    default: isDark 
+      ? 'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] font-semibold'
+      : 'bg-[var(--accent-primary)]/10 text-slate-700 font-semibold',
+    primary: 'bg-[var(--accent-primary)] text-white font-semibold',
+    success: isDark 
+      ? 'bg-green-500/20 text-green-400 font-semibold'
+      : 'bg-green-100 text-green-800 font-semibold',
+    danger: isDark 
+      ? 'bg-red-500/20 text-red-400 font-semibold'
+      : 'bg-red-100 text-red-800 font-semibold',
+    warning: isDark 
+      ? 'bg-amber-500/20 text-amber-400 font-semibold'
+      : 'bg-amber-100 text-amber-800 font-semibold',
+    info: isDark 
+      ? 'bg-blue-500/20 text-blue-400 font-semibold'
+      : 'bg-blue-100 text-blue-800 font-semibold',
+    outline: isDark 
+      ? 'bg-white/10 border border-[var(--accent-primary)]/50 text-slate-200 font-semibold'
+      : 'bg-white/50 border border-[var(--accent-primary)]/50 text-slate-700 font-semibold',
   };
 
   const sizes = {

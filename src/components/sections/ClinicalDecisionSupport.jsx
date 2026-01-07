@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { GlassCard, Badge } from '../shared';
 import { useApp } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 import {
   checkDrugInteractions,
   checkAllergyAlerts,
@@ -31,6 +32,7 @@ const severityColors = {
 
 // Alert Card Component
 function AlertCard({ type, icon: Icon, title, alerts, defaultOpen = true }) {
+  const { isDark } = useTheme();
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
   
   if (alerts.length === 0) return null;
@@ -39,22 +41,24 @@ function AlertCard({ type, icon: Icon, title, alerts, defaultOpen = true }) {
   const mediumCount = alerts.filter(a => a.severity === 'medium').length;
 
   return (
-    <div className="bg-white/40 backdrop-blur-sm border border-white/30 rounded-xl overflow-hidden">
+    <div className={`backdrop-blur-sm border rounded-xl overflow-hidden ${isDark ? 'bg-white/5 border-white/10' : 'bg-white/40 border-white/30'}`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-4 hover:bg-white/20 transition-colors"
+        className={`w-full flex items-center justify-between p-4 transition-colors ${isDark ? 'hover:bg-white/10' : 'hover:bg-white/20'}`}
       >
         <div className="flex items-center gap-3">
           <div className={`p-2 rounded-xl ${
-            highCount > 0 ? 'bg-red-100' : mediumCount > 0 ? 'bg-amber-100' : 'bg-blue-100'
+            highCount > 0 ? (isDark ? 'bg-red-500/20' : 'bg-red-100') : 
+            mediumCount > 0 ? (isDark ? 'bg-amber-500/20' : 'bg-amber-100') : 
+            (isDark ? 'bg-blue-500/20' : 'bg-blue-100')
           }`}>
             <Icon className={`w-5 h-5 ${
               highCount > 0 ? 'text-red-600' : mediumCount > 0 ? 'text-amber-600' : 'text-blue-600'
             }`} />
           </div>
           <div className="text-left">
-            <h4 className="font-semibold text-slate-800">{title}</h4>
-            <p className="text-xs text-slate-600">{alerts.length} alert{alerts.length !== 1 ? 's' : ''} found</p>
+            <h4 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{title}</h4>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{alerts.length} alert{alerts.length !== 1 ? 's' : ''} found</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -65,9 +69,9 @@ function AlertCard({ type, icon: Icon, title, alerts, defaultOpen = true }) {
             <Badge variant="warning" size="sm">{mediumCount} Medium</Badge>
           )}
           {isOpen ? (
-            <ChevronUp className="w-5 h-5 text-slate-500" />
+            <ChevronUp className={`w-5 h-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
           ) : (
-            <ChevronDown className="w-5 h-5 text-slate-500" />
+            <ChevronDown className={`w-5 h-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
           )}
         </div>
       </button>
@@ -79,10 +83,10 @@ function AlertCard({ type, icon: Icon, title, alerts, defaultOpen = true }) {
               key={idx}
               className={`p-3 rounded-lg border-l-4 ${
                 alert.severity === 'high' 
-                  ? 'bg-red-50/80 border-red-500' 
+                  ? (isDark ? 'bg-red-500/10 border-red-500' : 'bg-red-50/80 border-red-500')
                   : alert.severity === 'medium'
-                    ? 'bg-amber-50/80 border-amber-500'
-                    : 'bg-blue-50/80 border-blue-500'
+                    ? (isDark ? 'bg-amber-500/10 border-amber-500' : 'bg-amber-50/80 border-amber-500')
+                    : (isDark ? 'bg-blue-500/10 border-blue-500' : 'bg-blue-50/80 border-blue-500')
               }`}
             >
               <div className="flex items-start gap-2">
@@ -92,21 +96,21 @@ function AlertCard({ type, icon: Icon, title, alerts, defaultOpen = true }) {
                 }`} />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold text-slate-800 text-sm">
+                    <span className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>
                       {alert.drugs ? alert.drugs.join(' + ') : alert.drug}
                     </span>
                     <Badge variant={severityColors[alert.severity]} size="sm">
                       {alert.severity.toUpperCase()}
                     </Badge>
                   </div>
-                  <p className="text-sm text-slate-700">{alert.description || alert.note}</p>
+                  <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{alert.description || alert.note}</p>
                   {alert.recommendation && (
-                    <p className="text-xs text-slate-600 mt-1 italic">
+                    <p className={`text-xs mt-1 italic ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                       💡 {alert.recommendation}
                     </p>
                   )}
                   {alert.crossReactivity && (
-                    <p className="text-xs text-slate-600 mt-1 italic">
+                    <p className={`text-xs mt-1 italic ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                       ⚠️ {alert.crossReactivity}
                     </p>
                   )}
@@ -122,6 +126,7 @@ function AlertCard({ type, icon: Icon, title, alerts, defaultOpen = true }) {
 
 // Dosage Calculator Component
 function DosageCalculator({ medications, patient, vitals }) {
+  const { isDark } = useTheme();
   const [isOpen, setIsOpen] = React.useState(true);
   
   // Calculate eGFR (mock - would need creatinine from labs)
@@ -140,35 +145,35 @@ function DosageCalculator({ medications, patient, vitals }) {
   if (recommendations.length === 0) return null;
 
   return (
-    <div className="bg-white/40 backdrop-blur-sm border border-white/30 rounded-xl overflow-hidden">
+    <div className={`backdrop-blur-sm border rounded-xl overflow-hidden ${isDark ? 'bg-white/5 border-white/10' : 'bg-white/40 border-white/30'}`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-4 hover:bg-white/20 transition-colors"
+        className={`w-full flex items-center justify-between p-4 transition-colors ${isDark ? 'hover:bg-white/10' : 'hover:bg-white/20'}`}
       >
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-purple-100">
+          <div className={`p-2 rounded-xl ${isDark ? 'bg-purple-500/20' : 'bg-purple-100'}`}>
             <Calculator className="w-5 h-5 text-purple-600" />
           </div>
           <div className="text-left">
-            <h4 className="font-semibold text-slate-800">Dosage Recommendations</h4>
-            <p className="text-xs text-slate-600">
+            <h4 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Dosage Recommendations</h4>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
               eGFR: {eGFR || 'N/A'} mL/min/1.73m² | Age: {patient?.age || 'N/A'} | Weight: {vitals?.weight || 'N/A'} kg
             </p>
           </div>
         </div>
         {isOpen ? (
-          <ChevronUp className="w-5 h-5 text-slate-500" />
+          <ChevronUp className={`w-5 h-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
         ) : (
-          <ChevronDown className="w-5 h-5 text-slate-500" />
+          <ChevronDown className={`w-5 h-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
         )}
       </button>
       
       {isOpen && (
         <div className="px-4 pb-4 space-y-2">
           {recommendations.map((rec, idx) => (
-            <div key={idx} className="p-3 bg-purple-50/80 rounded-lg">
+            <div key={idx} className={`p-3 rounded-lg ${isDark ? 'bg-purple-500/10' : 'bg-purple-50/80'}`}>
               <div className="flex items-center justify-between mb-2">
-                <span className="font-semibold text-slate-800">{rec.drug}</span>
+                <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{rec.drug}</span>
                 {rec.renalAdjustment && rec.renalAdjustment !== 'none' && (
                   <Badge 
                     variant={rec.renalAdjustment === 'stop' ? 'danger' : 'warning'} 
@@ -179,12 +184,12 @@ function DosageCalculator({ medications, patient, vitals }) {
                 )}
               </div>
               {rec.renalDose && (
-                <p className="text-sm text-slate-700">
+                <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   <span className="font-medium">Recommended:</span> {rec.renalDose}
                 </p>
               )}
               {rec.ageNote && (
-                <p className="text-xs text-purple-700 mt-1">
+                <p className={`text-xs mt-1 ${isDark ? 'text-purple-400' : 'text-purple-700'}`}>
                   👴 {rec.ageNote}
                 </p>
               )}
@@ -199,6 +204,7 @@ function DosageCalculator({ medications, patient, vitals }) {
 // Main Clinical Decision Support Panel
 export function ClinicalDecisionSupport() {
   const { state } = useApp();
+  const { isDark } = useTheme();
   const { mpisData, carePlan, patient, vitals } = state;
 
   // Get all medications
@@ -232,12 +238,12 @@ export function ClinicalDecisionSupport() {
   return (
     <GlassCard className="p-5">
       <div className="flex items-center gap-3 mb-4">
-        <div className="p-2 bg-red-100 rounded-xl">
+        <div className={`p-2 rounded-xl ${isDark ? 'bg-red-500/20' : 'bg-red-100'}`}>
           <ShieldAlert className="w-5 h-5 text-red-600" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-slate-800">Clinical Decision Support</h3>
-          <p className="text-xs text-slate-600">Automated safety checks and recommendations</p>
+          <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Clinical Decision Support</h3>
+          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Automated safety checks and recommendations</p>
         </div>
         {!hasAlerts && (
           <Badge variant="success" size="md" className="ml-auto">
@@ -276,13 +282,13 @@ export function ClinicalDecisionSupport() {
       </div>
 
       {!hasAlerts && interactions.length === 0 && (
-        <div className="mt-4 p-4 bg-green-50/80 rounded-xl flex items-center gap-3">
-          <div className="p-2 bg-green-100 rounded-full">
+        <div className={`mt-4 p-4 rounded-xl flex items-center gap-3 ${isDark ? 'bg-green-500/10' : 'bg-green-50/80'}`}>
+          <div className={`p-2 rounded-full ${isDark ? 'bg-green-500/20' : 'bg-green-100'}`}>
             <Info className="w-5 h-5 text-green-600" />
           </div>
           <div>
-            <p className="font-medium text-green-800">All Safety Checks Passed</p>
-            <p className="text-sm text-green-700">No drug interactions, allergy alerts, or contraindications detected.</p>
+            <p className={`font-medium ${isDark ? 'text-green-400' : 'text-green-800'}`}>All Safety Checks Passed</p>
+            <p className={`text-sm ${isDark ? 'text-green-500' : 'text-green-700'}`}>No drug interactions, allergy alerts, or contraindications detected.</p>
           </div>
         </div>
       )}
