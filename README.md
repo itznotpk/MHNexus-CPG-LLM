@@ -12,12 +12,15 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application built wit
 
 ### 🏠 Sidebar Navigation & Dashboard
 
-#### Dashboard
-- **Today's Schedule**: Visual timeline of patient appointments
+#### Home
+- **Today's Schedule**: Collapsible visual timeline of patient appointments with filters & sorting
 - **Quick Stats**: Consultations completed, pending reviews, patients seen
 - **Patient Cards**: Color-coded by priority (emergency, follow-up, regular)
+- **Patient Quick View**: Modal with patient summary and PDF/CSV export
 - **Start Consult**: One-click access to begin patient consultation
-- **Waiting Room Preview**: Triage queue with status indicators
+- **Status Filters**: All, Waiting, In Progress, Done
+- **Sort Options**: By time or urgency level
+- **Toast Notifications**: Real-time feedback for user actions
 
 #### My Patients
 - **Patient Registry**: Searchable patient database
@@ -48,15 +51,19 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application built wit
 - **Selectable Diagnoses**: Click to select any diagnosis for care plan generation
 
 #### 3. Care Plan Section
-- **Clinical Assessment Summary**: AI-generated overview
+- **Clinical Summary**: AI-generated patient overview
+- **Drug Safety Alerts**: Drug interactions, allergy alerts, contraindications
+- **Medication Recommendations**: 
+  - 🔴 STOP medications (with reasons & CPG references)
+  - 🟢 START medications (with dosing & CPG references)
+  - 🟡 CHANGE medications (before → after dosing with KIV notes)
+  - 🔵 CONTINUE medications (with CPG references)
 - **Interventions & Procedures**: With CPT codes and urgency levels
-- **Pharmacological Management**: 
-  - STOP medications (with reasons)
-  - START medications (with dosing instructions)
-  - CONTINUE medications
-- **Monitoring & Nursing Care**: Checklist format
-- **Laboratory Investigations**: With priority levels
-- **Disposition & Follow-up**: Referrals and patient education
+- **Monitoring & Testing**: Schedules with frequency (e.g., "Now, then q3 months")
+- **Patient Education & Counseling**: Categorized (Lifestyle, Self-Monitoring, Safety)
+- **Referrals**: Specialist referrals with priority badges
+- **Lifestyle & Self-Management Goals**: Diet, exercise, weight management
+- **Follow-up**: Scheduling recommendations
 - **CPG References**: Evidence-based guideline citations
 
 #### 4. Output Section
@@ -84,6 +91,7 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application built wit
 
 #### Approval Workflow
 - **Three-Stage Process**: Draft → Reviewed → Approved
+- **AI Feedback Integration**: Embedded feedback prompt for improving recommendations
 - **Comment Field**: Add notes for each transition
 - **History Tracking**: Audit trail with timestamps
 - **Approval Required**: Finalization locked until approved
@@ -99,7 +107,7 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application built wit
 ## 🎨 Design System
 
 ### Theme System
-- **Light/Dark/System Modes**: Automatic theme detection or manual selection
+- **Light/Dark/System Modes**: Light theme as default, automatic detection or manual selection
 - **6 Accent Colors**: Cyan (default), Blue, Purple, Emerald, Amber, Rose
 - **CSS Custom Properties**: Dynamic theming via `--accent-primary`, `--accent-primary-hover`, `--accent-secondary`
 - **Full Accent Color Integration**: All UI components dynamically respond to accent color selection
@@ -135,7 +143,7 @@ src/
 │   │   ├── Sidebar.jsx     # Collapsible navigation sidebar
 │   │   └── index.js
 │   ├── pages/
-│   │   ├── Dashboard.jsx   # Main dashboard with schedule
+│   │   ├── Home.jsx        # Main dashboard with schedule, filters & quick view
 │   │   ├── MyPatients.jsx  # Patient registry & search
 │   │   └── Settings.jsx    # User preferences & config
 │   ├── sections/
@@ -160,6 +168,8 @@ src/
 │       ├── NotesComments.jsx
 │       ├── ApprovalWorkflow.jsx
 │       ├── RegenerateButton.jsx
+│       ├── Notification.jsx    # Toast notification system
+│       ├── PatientQuickView.jsx # Patient modal with export
 │       └── index.js
 ├── context/
 │   ├── AppContext.jsx      # Global state management
