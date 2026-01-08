@@ -8,7 +8,11 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application built wit
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.x-38B2AC?style=flat-square&logo=tailwind-css)
 ![Supabase](https://img.shields.io/badge/Supabase-Backend-3ECF8E?style=flat-square&logo=supabase)
 
+
 ## 🌟 Features
+
+**Latest Update (2026-01-08):**
+- UI/UX improvements: evidence text removed, sidebar consultation tab updated, approval workflow simplified, regenerate flow improved, diagnosis confidence % removed, button placements improved. See [CHANGELOG.md](CHANGELOG.md) for details.
 
 ### 🏠 Sidebar Navigation & Dashboard
 
@@ -89,12 +93,12 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application built wit
 - **Read Aloud**: Text-to-speech for care plan summaries
 - **Real-time Transcription Preview**
 
-#### Approval Workflow
-- **Three-Stage Process**: Draft → Reviewed → Approved
-- **AI Feedback Integration**: Embedded feedback prompt for improving recommendations
-- **Comment Field**: Add notes for each transition
+
+#### Approval Workflow (Updated)
+- **Simple Approve/Reject**: Approve or reject care plan with feedback
+- **Regenerate on Reject**: Add feedback and regenerate care plan in-place
+- **Approval Required**: Must approve before generating report
 - **History Tracking**: Audit trail with timestamps
-- **Approval Required**: Finalization locked until approved
 
 #### Analytics Dashboard
 - **Usage Metrics**: Total sessions, weekly trends
@@ -312,5 +316,10 @@ Proprietary - MHNexus Healthcare Solutions
 
 ---
 
-**Version**: 1.2.0 (Full Accent Color System + Theme Enhancements)  
-**Last Updated**: January 2025
+
+---
+
+For a full list of changes, see [CHANGELOG.md](CHANGELOG.md).
+
+**Version**: 1.2.1 (UI/UX Workflow Simplification, Jan 2026)
+**Last Updated**: January 2026
