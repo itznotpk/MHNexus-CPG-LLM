@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   LayoutDashboard, 
   Users, 
-  UserPlus, 
+  Stethoscope, 
   Settings, 
   ChevronLeft,
   ChevronRight
@@ -12,7 +12,7 @@ import { useTheme } from '../../context/ThemeContext';
 const navItems = [
   { id: 'dashboard', label: 'Home', icon: LayoutDashboard },
   { id: 'patients', label: 'My Patients', icon: Users },
-  { id: 'consultation', label: 'Add Patient', icon: UserPlus },
+  { id: 'consultation', label: 'Consultation', icon: Stethoscope },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 

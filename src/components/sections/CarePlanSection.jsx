@@ -14,6 +14,7 @@ import {
   Plus,
   Minus,
   ArrowRight,
+  ArrowLeft,
   Shield,
   Heart,
 } from 'lucide-react';
@@ -23,47 +24,51 @@ import {
   Badge,
   WorkflowActions,
   WORKFLOW_STATES,
-  RegenerateButton,
   TextToSpeechButton,
 } from '../shared';
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
-import { ClinicalDecisionSupport } from './ClinicalDecisionSupport';
+
 
 // Accordion Section Component
-function AccordionSection({ title, icon: Icon, children, defaultOpen = true }) {
+function AccordionSection({ title, icon: Icon, children, defaultOpen = true, rightAction }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const { isDark } = useTheme();
 
   return (
     <GlassCard className="overflow-hidden">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between p-4 transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-white/10'}`}
-      >
-        <div className="flex items-center gap-3">
+      <div className={`flex items-center justify-between p-4 ${isDark ? 'hover:bg-white/5' : 'hover:bg-white/10'}`}>
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex items-center gap-3 flex-1"
+        >
           <div className="p-2 bg-[var(--accent-primary)]/20 rounded-xl">
             <Icon className="w-5 h-5 text-[var(--accent-primary)]" />
           </div>
           <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{title}</h3>
+        </button>
+        <div className="flex items-center gap-2">
+          {rightAction}
+          <button onClick={() => setIsOpen(!isOpen)}>
+            {isOpen ? (
+              <ChevronUp className={`w-5 h-5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`} />
+            ) : (
+              <ChevronDown className={`w-5 h-5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`} />
+            )}
+          </button>
         </div>
-        {isOpen ? (
-          <ChevronUp className={`w-5 h-5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`} />
-        ) : (
-          <ChevronDown className={`w-5 h-5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`} />
-        )}
-      </button>
+      </div>
       {isOpen && <div className="px-4 pb-4">{children}</div>}
     </GlassCard>
   );
 }
 
 // Clinical Summary Section
-function ClinicalSummary({ summary }) {
+function ClinicalSummary({ summary, readSummaryButton }) {
   const { isDark } = useTheme();
   
   return (
-    <AccordionSection title="Summary" icon={FileText}>
+    <AccordionSection title="Summary" icon={FileText} rightAction={readSummaryButton}>
       <div className={`p-4 rounded-xl ${isDark ? 'bg-white/10' : 'bg-white/50'}`}>
         <p className={`leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{summary}</p>
       </div>
@@ -476,31 +481,18 @@ export function CarePlanSection() {
         </h2>
       </div>
 
-      {/* Top Action Bar */}
-      <div className={`flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl border ${
-        isDark ? 'bg-white/10 border-white/10' : 'bg-white/40 border-slate-200'
-      }`}>
-        <div className="flex items-center gap-3">
-          <RegenerateButton
-            onRegenerate={handleRegenerate}
-            label="Regenerate Care Plan"
-          />
+      {/* Summary */}
+      <ClinicalSummary 
+        summary={carePlan.clinicalSummary} 
+        readSummaryButton={
           <TextToSpeechButton
             text={generateCarePlanSummary()}
-            label="Read Summary"
+            label="Read"
           />
-        </div>
-        <div className="flex items-center gap-2">
-          <Shield className="w-4 h-4 text-[var(--accent-primary)]" />
-          <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Evidence-based recommendations</span>
-        </div>
-      </div>
+        }
+      />
 
-      {/* Summary */}
-      <ClinicalSummary summary={carePlan.clinicalSummary} />
 
-      {/* Drug Safety Alerts */}
-      <ClinicalDecisionSupport />
 
       {/* Medication Recommendations - Stop/Start/Change/Continue */}
       <MedicationsSection medications={carePlan.medications} />
@@ -532,6 +524,7 @@ export function CarePlanSection() {
           currentStatus={workflowStatus}
           onStatusChange={handleStatusChange}
           onReject={handleReject}
+          onRegenerate={handleRegenerate}
           history={workflowHistory}
         />
       </div>
@@ -541,9 +534,10 @@ export function CarePlanSection() {
         <Button
           variant="secondary"
           size="lg"
+          icon={ArrowLeft}
           onClick={handleBack}
         >
-          Back to Diagnosis
+          Back
         </Button>
         <Button
           variant="primary"
@@ -555,14 +549,14 @@ export function CarePlanSection() {
           className="min-w-[250px]"
         >
           {workflowStatus === WORKFLOW_STATES.APPROVED 
-            ? 'Finalize & Save Care Plan' 
-            : 'Approval Required to Finalize'}
+            ? 'Generate Report' 
+            : 'Approval Required'}
         </Button>
       </div>
       
       {workflowStatus !== WORKFLOW_STATES.APPROVED && (
         <p className="text-center text-sm text-slate-500">
-          Complete the approval workflow above to enable finalization
+          Approve the care plan above to generate report
         </p>
       )}
     </div>

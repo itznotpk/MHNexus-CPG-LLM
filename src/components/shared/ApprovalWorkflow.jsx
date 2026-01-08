@@ -1,45 +1,44 @@
 import React, { useState } from 'react';
 import { 
   FileEdit, 
-  CheckCircle, 
   CheckCircle2, 
-  Clock, 
+  XCircle,
   User, 
   ChevronDown,
-  AlertCircle,
-  History
+  History,
+  RefreshCw
 } from 'lucide-react';
 import { Badge, Button } from '../shared';
 import { useTheme } from '../../context/ThemeContext';
 
-// Workflow States
+// Workflow States - Simplified
 export const WORKFLOW_STATES = {
   DRAFT: 'draft',
-  REVIEWED: 'reviewed',
-  APPROVED: 'approved'
+  APPROVED: 'approved',
+  REJECTED: 'rejected'
 };
 
 const stateConfig = {
   [WORKFLOW_STATES.DRAFT]: {
-    label: 'Draft',
+    label: 'Pending Review',
     icon: FileEdit,
     color: 'bg-amber-100 text-amber-700 border-amber-200',
     dotColor: 'bg-amber-500',
-    description: 'Pending review'
-  },
-  [WORKFLOW_STATES.REVIEWED]: {
-    label: 'Reviewed',
-    icon: CheckCircle,
-    color: 'bg-blue-100 text-blue-700 border-blue-200',
-    dotColor: 'bg-blue-500',
-    description: 'Awaiting final approval'
+    description: 'Awaiting approval'
   },
   [WORKFLOW_STATES.APPROVED]: {
     label: 'Approved',
     icon: CheckCircle2,
     color: 'bg-green-100 text-green-700 border-green-200',
     dotColor: 'bg-green-500',
-    description: 'Ready for implementation'
+    description: 'Ready to generate report'
+  },
+  [WORKFLOW_STATES.REJECTED]: {
+    label: 'Rejected',
+    icon: XCircle,
+    color: 'bg-red-100 text-red-700 border-red-200',
+    dotColor: 'bg-red-500',
+    description: 'Needs regeneration'
   }
 };
 
@@ -62,108 +61,40 @@ export function WorkflowStatusBadge({ status, size = 'md' }) {
   );
 }
 
-// Workflow Progress Indicator
-export function WorkflowProgress({ currentStatus }) {
-  const { isDark } = useTheme();
-  const states = [WORKFLOW_STATES.DRAFT, WORKFLOW_STATES.REVIEWED, WORKFLOW_STATES.APPROVED];
-  const currentIndex = states.indexOf(currentStatus);
-
-  return (
-    <div className="flex items-center gap-2">
-      {states.map((state, index) => {
-        const config = stateConfig[state];
-        const Icon = config.icon;
-        const isComplete = index < currentIndex;
-        const isCurrent = index === currentIndex;
-
-        return (
-          <React.Fragment key={state}>
-            <div className={`flex items-center gap-1.5 ${isCurrent ? 'opacity-100' : isComplete ? 'opacity-70' : 'opacity-40'}`}>
-              <div className={`p-1.5 rounded-full ${isCurrent ? config.color : isComplete ? 'bg-green-100 text-green-600' : isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-400'}`}>
-                <Icon className="w-4 h-4" />
-              </div>
-              <span className={`text-xs font-medium ${isCurrent ? (isDark ? 'text-slate-200' : 'text-slate-700') : (isDark ? 'text-slate-400' : 'text-slate-500')}`}>
-                {config.label}
-              </span>
-            </div>
-            {index < states.length - 1 && (
-              <div className={`w-8 h-0.5 ${index < currentIndex ? 'bg-green-400' : isDark ? 'bg-slate-600' : 'bg-slate-200'}`} />
-            )}
-          </React.Fragment>
-        );
-      })}
-    </div>
-  );
-}
-
-// Workflow Actions Panel
+// Workflow Actions Panel - Simplified
 export function WorkflowActions({ 
   currentStatus, 
   onStatusChange, 
   onReject,
+  onRegenerate,
   history = [],
   disabled = false 
 }) {
   const { isDark } = useTheme();
   const [showHistory, setShowHistory] = useState(false);
   const [comment, setComment] = useState('');
+  const [isRejected, setIsRejected] = useState(false);
 
-  const handleAdvance = () => {
-    let nextStatus;
-    if (currentStatus === WORKFLOW_STATES.DRAFT) {
-      nextStatus = WORKFLOW_STATES.REVIEWED;
-    } else if (currentStatus === WORKFLOW_STATES.REVIEWED) {
-      nextStatus = WORKFLOW_STATES.APPROVED;
-    }
-    
-    if (nextStatus && onStatusChange) {
-      onStatusChange(nextStatus, comment);
+  const handleApprove = () => {
+    if (onStatusChange) {
+      onStatusChange(WORKFLOW_STATES.APPROVED, comment);
       setComment('');
+      setIsRejected(false);
     }
   };
 
   const handleReject = () => {
     if (onReject) {
       onReject(comment);
-      setComment('');
+      setIsRejected(true);
     }
   };
 
-  const getActionButton = () => {
-    switch (currentStatus) {
-      case WORKFLOW_STATES.DRAFT:
-        return (
-          <Button
-            variant="primary"
-            size="sm"
-            icon={CheckCircle}
-            onClick={handleAdvance}
-            disabled={disabled}
-          >
-            Mark as Reviewed
-          </Button>
-        );
-      case WORKFLOW_STATES.REVIEWED:
-        return (
-          <Button
-            variant="success"
-            size="sm"
-            icon={CheckCircle2}
-            onClick={handleAdvance}
-            disabled={disabled}
-          >
-            Approve
-          </Button>
-        );
-      case WORKFLOW_STATES.APPROVED:
-        return (
-          <div className="flex items-center gap-2 text-green-600">
-            <CheckCircle2 className="w-5 h-5" />
-            <span className="text-sm font-medium">Approved</span>
-          </div>
-        );
-      default:
-        return null;
+  const handleRegenerate = () => {
+    if (onRegenerate) {
+      onRegenerate(comment);
+      setComment('');
+      setIsRejected(false);
     }
   };
 
@@ -172,67 +103,140 @@ export function WorkflowActions({
       <div className="flex items-center justify-between mb-4">
         <h3 className={`text-sm font-semibold flex items-center gap-2 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
           <FileEdit className="w-4 h-4 text-[var(--accent-primary)]" />
-          Approval Workflow
+          Review & Approve
         </h3>
-        <WorkflowStatusBadge status={currentStatus} size="sm" />
+        <WorkflowStatusBadge status={isRejected ? WORKFLOW_STATES.REJECTED : currentStatus} size="sm" />
       </div>
 
-      {/* Progress Indicator */}
-      <div className="mb-4">
-        <WorkflowProgress currentStatus={currentStatus} />
-      </div>
-
-      {/* Comment Input */}
-      {currentStatus !== WORKFLOW_STATES.APPROVED && (
-        <div className="mb-4">
-          {/* AI Feedback Info */}
-          <div className={`mb-3 p-3 rounded-lg ${isDark ? 'bg-[var(--accent-primary)]/10' : 'bg-[var(--accent-primary)]/5'}`}>
-            <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-              <span className="font-semibold">Help Improve AI Recommendations:</span> Your feedback helps our AI learn and provide better care plan recommendations. Add comments below to share your insights.
-            </p>
+      {/* Rejected State - Show Regenerate Option */}
+      {isRejected && (
+        <div className={`mb-4 p-4 rounded-lg ${isDark ? 'bg-red-500/10 border border-red-500/30' : 'bg-red-50 border border-red-200'}`}>
+          <div className="flex items-start gap-3 mb-3">
+            <XCircle className={`w-5 h-5 mt-0.5 ${isDark ? 'text-red-400' : 'text-red-600'}`} />
+            <div>
+              <p className={`text-sm font-medium ${isDark ? 'text-red-300' : 'text-red-800'}`}>Care Plan Rejected</p>
+              <p className={`text-xs mt-1 ${isDark ? 'text-red-200/80' : 'text-red-700'}`}>
+                Add feedback below and regenerate the care plan.
+              </p>
+            </div>
           </div>
+          
+          {/* Feedback for regeneration */}
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            placeholder="Add a comment (optional)..."
-            className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50 resize-none ${
+            placeholder="What should be changed? (e.g., 'Use alternative medication', 'More conservative approach')..."
+            className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500/50 resize-none mb-3 ${
               isDark 
-                ? 'bg-white/5 border-white/20 text-white placeholder-slate-500' 
-                : 'bg-white/80 border-slate-300 text-slate-800 placeholder-slate-400'
+                ? 'bg-white/5 border-red-500/30 text-white placeholder-slate-500' 
+                : 'bg-white/80 border-red-300 text-slate-800 placeholder-slate-400'
             }`}
             rows={2}
           />
+          
+          <div className="flex items-center gap-2">
+            <Button
+              variant="primary"
+              size="sm"
+              icon={RefreshCw}
+              onClick={handleRegenerate}
+              disabled={disabled}
+            >
+              Regenerate Care Plan
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsRejected(false)}
+            >
+              Cancel
+            </Button>
+          </div>
         </div>
       )}
 
-      {/* Action Buttons */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {getActionButton()}
-          {currentStatus !== WORKFLOW_STATES.DRAFT && currentStatus !== WORKFLOW_STATES.APPROVED && (
-            <Button
-              variant="danger"
-              size="sm"
-              icon={AlertCircle}
-              onClick={handleReject}
-              disabled={disabled}
+      {/* Normal State - Show Approve/Reject */}
+      {!isRejected && currentStatus !== WORKFLOW_STATES.APPROVED && (
+        <>
+          {/* AI Feedback Info */}
+          <div className={`mb-3 p-3 rounded-lg ${isDark ? 'bg-[var(--accent-primary)]/10' : 'bg-[var(--accent-primary)]/5'}`}>
+            <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+              <span className="font-semibold">Help Improve AI Recommendations:</span> Your feedback helps our AI learn and provide better care plan recommendations.
+            </p>
+          </div>
+
+          {/* Comment Input */}
+          <div className="mb-4">
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Add a comment (optional)..."
+              className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50 resize-none ${
+                isDark 
+                  ? 'bg-white/5 border-white/20 text-white placeholder-slate-500' 
+                  : 'bg-white/80 border-slate-300 text-slate-800 placeholder-slate-400'
+              }`}
+              rows={2}
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="success"
+                size="sm"
+                icon={CheckCircle2}
+                onClick={handleApprove}
+                disabled={disabled}
+              >
+                Approve
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                icon={XCircle}
+                onClick={handleReject}
+                disabled={disabled}
+              >
+                Reject
+              </Button>
+            </div>
+            
+            {history.length > 0 && (
+              <button
+                onClick={() => setShowHistory(!showHistory)}
+                className={`flex items-center gap-1 text-xs ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                <History className="w-3.5 h-3.5" />
+                History ({history.length})
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showHistory ? 'rotate-180' : ''}`} />
+              </button>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Approved State */}
+      {currentStatus === WORKFLOW_STATES.APPROVED && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-green-600">
+            <CheckCircle2 className="w-5 h-5" />
+            <span className="text-sm font-medium">Care Plan Approved - Ready to Generate Report</span>
+          </div>
+          
+          {history.length > 0 && (
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className={`flex items-center gap-1 text-xs ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
             >
-              Reject
-            </Button>
+              <History className="w-3.5 h-3.5" />
+              History ({history.length})
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showHistory ? 'rotate-180' : ''}`} />
+            </button>
           )}
         </div>
-        
-        {history.length > 0 && (
-          <button
-            onClick={() => setShowHistory(!showHistory)}
-            className={`flex items-center gap-1 text-xs ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
-          >
-            <History className="w-3.5 h-3.5" />
-            History ({history.length})
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showHistory ? 'rotate-180' : ''}`} />
-          </button>
-        )}
-      </div>
+      )}
 
       {/* History */}
       {showHistory && history.length > 0 && (
