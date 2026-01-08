@@ -3,7 +3,7 @@ import {
   Brain,
   AlertCircle,
   CheckCircle,
-  RefreshCw,
+  ArrowLeft,
   Sparkles,
   Target,
   Check,
@@ -13,7 +13,6 @@ import {
   Button,
   Badge,
   RiskBadge,
-  ProbabilityBar,
   CodeBadge,
 } from '../shared';
 import { useApp } from '../../context/AppContext';
@@ -72,12 +71,6 @@ export function DiagnosisSection() {
               </h3>
             </div>
           </div>
-          <Badge 
-            variant={selectedDiagnosis?.probability >= 70 ? 'success' : selectedDiagnosis?.probability >= 40 ? 'warning' : 'info'} 
-            size="lg"
-          >
-            {selectedDiagnosis?.probability}% Probability
-          </Badge>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 mb-4">
@@ -105,10 +98,7 @@ export function DiagnosisSection() {
           <div className="p-2 bg-[var(--accent-primary)]/20 rounded-xl">
             <Target className="w-5 h-5 text-[var(--accent-primary)]" />
           </div>
-          <div>
-            <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Differential Diagnosis</h3>
-            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Click to select a diagnosis for care plan generation</p>
-          </div>
+          <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Differential Diagnosis</h3>
         </div>
 
         <div className="space-y-3">
@@ -159,13 +149,6 @@ export function DiagnosisSection() {
                     <RiskBadge risk={diff.risk} />
                   </div>
                 </div>
-                <div className="ml-9">
-                  <ProbabilityBar
-                    label=""
-                    probability={diff.probability}
-                    risk={diff.risk}
-                  />
-                </div>
               </button>
             );
           })}
@@ -177,10 +160,10 @@ export function DiagnosisSection() {
         <Button
           variant="secondary"
           size="lg"
-          icon={RefreshCw}
+          icon={ArrowLeft}
           onClick={handleBack}
         >
-          Revise Assessment
+          Back
         </Button>
         <Button
           variant="primary"
@@ -192,7 +175,7 @@ export function DiagnosisSection() {
           glow={!isGeneratingPlan}
           className="min-w-[280px]"
         >
-          {isGeneratingPlan ? 'Generating Care Plan...' : `Confirm & Generate Care Plan`}
+          {isGeneratingPlan ? 'Generating Care Plan...' : 'Generate Care Plan'}
         </Button>
       </div>
 
