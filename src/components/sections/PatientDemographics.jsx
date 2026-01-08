@@ -60,7 +60,7 @@ export function PatientDemographics() {
 
         <Input
           id="patient-nsn"
-          label="National Health Number (NSN)"
+          label="National Registration Identity Card (NRIC)"
           placeholder="e.g., 580315-08-1234"
           value={patient.nsn}
           onChange={(e) => handleChange('nsn', e.target.value)}

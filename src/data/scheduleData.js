@@ -9,7 +9,7 @@ export const todaySchedule = [
       name: 'Ahmad bin Abdullah',
       age: 68,
       gender: 'Male',
-      nsn: 'NSN-2024-78945',
+      nsn: '580315-08-1234',
       photo: null
     },
     status: 'waiting', // waiting, in-progress, done
@@ -35,7 +35,7 @@ export const todaySchedule = [
       name: 'Siti Nurhaliza binti Hassan',
       age: 45,
       gender: 'Female',
-      nsn: 'NSN-2024-65432',
+      nsn: '810520-10-5678',
       photo: null
     },
     status: 'waiting',
@@ -61,7 +61,7 @@ export const todaySchedule = [
       name: 'Raj Kumar a/l Muthu',
       age: 52,
       gender: 'Male',
-      nsn: 'NSN-2024-11223',
+      nsn: '740812-14-9012',
       photo: null
     },
     status: 'waiting',
@@ -87,7 +87,7 @@ export const todaySchedule = [
       name: 'Lee Mei Ling',
       age: 35,
       gender: 'Female',
-      nsn: 'NSN-2024-99887',
+      nsn: '910605-07-3456',
       photo: null
     },
     status: 'waiting',
@@ -113,7 +113,7 @@ export const todaySchedule = [
       name: 'Mohammad Faiz bin Yusof',
       age: 72,
       gender: 'Male',
-      nsn: 'NSN-2024-44556',
+      nsn: '540118-02-7890',
       photo: null
     },
     status: 'waiting',
@@ -139,7 +139,7 @@ export const todaySchedule = [
       name: 'Aminah binti Osman',
       age: 58,
       gender: 'Female',
-      nsn: 'NSN-2024-77889',
+      nsn: '680923-06-4567',
       photo: null
     },
     status: 'waiting',
@@ -165,7 +165,7 @@ export const patientRegistry = [
     name: 'Ahmad bin Abdullah',
     age: 68,
     gender: 'Male',
-    nsn: 'NSN-2024-78945',
+    nsn: '580315-08-1234',
     status: 'active', // active, discharged, follow-up
     lastVisit: '2026-01-07',
     nextReview: '2026-01-10',
@@ -173,14 +173,41 @@ export const patientRegistry = [
     diagnoses: ['Type 2 Diabetes Mellitus', 'Diabetic Peripheral Neuropathy', 'Hypertension'],
     riskLevel: 'high',
     phone: '+60 12-345 6789',
-    email: 'ahmad.abdullah@email.com'
+    email: 'ahmad.abdullah@email.com',
+    medicalHistory: {
+      conditions: [
+        { name: 'Type 2 Diabetes Mellitus', diagnosedDate: '2015-03-15', status: 'Active' },
+        { name: 'Hypertension', diagnosedDate: '2012-08-20', status: 'Active' },
+        { name: 'Diabetic Peripheral Neuropathy', diagnosedDate: '2023-06-10', status: 'Active' },
+        { name: 'Hyperlipidemia', diagnosedDate: '2016-01-05', status: 'Active' }
+      ],
+      medications: [
+        { name: 'Metformin 500mg', dosage: 'BD', startDate: '2015-03-20', status: 'Current' },
+        { name: 'Amlodipine 5mg', dosage: 'OD', startDate: '2012-09-01', status: 'Current' },
+        { name: 'Atorvastatin 20mg', dosage: 'ON', startDate: '2016-02-01', status: 'Current' },
+        { name: 'Gabapentin 300mg', dosage: 'TDS', startDate: '2023-06-15', status: 'Current' },
+        { name: 'Gliclazide 80mg', dosage: 'BD', startDate: '2018-04-10', endDate: '2022-01-15', status: 'Stopped' }
+      ],
+      labResults: [
+        { test: 'HbA1c', value: '8.5%', date: '2026-01-05', status: 'High' },
+        { test: 'Fasting Blood Glucose', value: '9.2 mmol/L', date: '2026-01-05', status: 'High' },
+        { test: 'eGFR', value: '65 mL/min', date: '2026-01-05', status: 'Normal' },
+        { test: 'Total Cholesterol', value: '4.8 mmol/L', date: '2025-10-15', status: 'Normal' },
+        { test: 'LDL', value: '2.5 mmol/L', date: '2025-10-15', status: 'Normal' }
+      ],
+      procedures: [
+        { name: 'Fundoscopy', date: '2025-06-20', result: 'Mild NPDR' },
+        { name: 'ECG', date: '2025-01-10', result: 'Normal sinus rhythm' }
+      ],
+      allergies: ['Sulfa drugs', 'Penicillin']
+    }
   },
   {
     id: 'p-002',
     name: 'Siti Nurhaliza binti Hassan',
     age: 45,
     gender: 'Female',
-    nsn: 'NSN-2024-65432',
+    nsn: '810520-10-5678',
     status: 'active',
     lastVisit: '2026-01-07',
     nextReview: null,
@@ -195,7 +222,7 @@ export const patientRegistry = [
     name: 'Raj Kumar a/l Muthu',
     age: 52,
     gender: 'Male',
-    nsn: 'NSN-2024-11223',
+    nsn: '740812-14-9012',
     status: 'follow-up',
     lastVisit: '2026-01-07',
     nextReview: '2026-01-08',
@@ -210,7 +237,7 @@ export const patientRegistry = [
     name: 'Lee Mei Ling',
     age: 35,
     gender: 'Female',
-    nsn: 'NSN-2024-99887',
+    nsn: '910605-07-3456',
     status: 'active',
     lastVisit: '2026-01-07',
     nextReview: '2026-02-07',
@@ -225,7 +252,7 @@ export const patientRegistry = [
     name: 'Mohammad Faiz bin Yusof',
     age: 72,
     gender: 'Male',
-    nsn: 'NSN-2024-44556',
+    nsn: '540118-02-7890',
     status: 'follow-up',
     lastVisit: '2026-01-07',
     nextReview: '2026-01-14',
@@ -240,7 +267,7 @@ export const patientRegistry = [
     name: 'Aminah binti Osman',
     age: 58,
     gender: 'Female',
-    nsn: 'NSN-2024-77889',
+    nsn: '680923-06-4567',
     status: 'active',
     lastVisit: '2026-01-07',
     nextReview: '2026-01-21',
@@ -255,7 +282,7 @@ export const patientRegistry = [
     name: 'Tan Wei Ming',
     age: 28,
     gender: 'Male',
-    nsn: 'NSN-2024-22334',
+    nsn: '980310-14-2345',
     status: 'discharged',
     lastVisit: '2025-12-20',
     nextReview: null,
@@ -270,7 +297,7 @@ export const patientRegistry = [
     name: 'Fatimah binti Ismail',
     age: 65,
     gender: 'Female',
-    nsn: 'NSN-2024-55667',
+    nsn: '610715-01-6789',
     status: 'follow-up',
     lastVisit: '2026-01-05',
     nextReview: '2026-01-12',

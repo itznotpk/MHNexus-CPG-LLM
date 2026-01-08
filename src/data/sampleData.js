@@ -8,6 +8,101 @@ export const samplePatientData = {
   age: 68,
 };
 
+// Mock MPIS Patient Database for NRIC lookup
+export const mpisPatientDatabase = {
+  "580315-08-1234": {
+    patient: {
+      name: "Ahmad bin Abdullah",
+      dob: "1958-03-15",
+      nsn: "580315-08-1234",
+      gender: "Male",
+      age: 68,
+    },
+    mpisData: {
+      race: "Malay",
+      ethnicity: "Malaysian",
+      allergies: "None known",
+      comorbidities: ["Type 2 Diabetes Mellitus", "Hypertension", "Hyperlipidemia"],
+      currentMeds: [
+        { name: "Metformin", dose: "1000mg", frequency: "BD" },
+        { name: "Glipizide", dose: "5mg", frequency: "OD" },
+        { name: "Amlodipine", dose: "5mg", frequency: "OD" },
+        { name: "Atorvastatin", dose: "20mg", frequency: "ON" },
+      ],
+      vitalsHistory: [
+        { date: "2025-02-15", bpSystolic: 158, bpDiastolic: 95, hr: 82, temp: 36.5, spo2: 97, weight: 94 },
+        { date: "2025-03-20", bpSystolic: 155, bpDiastolic: 92, hr: 80, temp: 36.6, spo2: 97, weight: 93.5 },
+        { date: "2025-04-18", bpSystolic: 150, bpDiastolic: 90, hr: 78, temp: 36.4, spo2: 98, weight: 93 },
+        { date: "2025-05-22", bpSystolic: 148, bpDiastolic: 88, hr: 76, temp: 36.5, spo2: 97, weight: 92.5 },
+        { date: "2025-06-19", bpSystolic: 152, bpDiastolic: 92, hr: 80, temp: 36.7, spo2: 96, weight: 93 },
+        { date: "2025-07-17", bpSystolic: 146, bpDiastolic: 86, hr: 75, temp: 36.5, spo2: 98, weight: 92 },
+        { date: "2025-08-21", bpSystolic: 144, bpDiastolic: 85, hr: 74, temp: 36.4, spo2: 98, weight: 91.5 },
+        { date: "2025-09-18", bpSystolic: 148, bpDiastolic: 88, hr: 78, temp: 36.6, spo2: 97, weight: 92 },
+        { date: "2025-10-16", bpSystolic: 145, bpDiastolic: 86, hr: 76, temp: 36.5, spo2: 98, weight: 91 },
+        { date: "2025-11-20", bpSystolic: 143, bpDiastolic: 85, hr: 77, temp: 36.4, spo2: 98, weight: 91.5 },
+        { date: "2025-12-18", bpSystolic: 140, bpDiastolic: 84, hr: 75, temp: 36.5, spo2: 98, weight: 91 },
+        { date: "2026-01-08", bpSystolic: 142, bpDiastolic: 86, hr: 78, temp: 36.6, spo2: 98, weight: 92 },
+      ],
+    },
+  },
+  "750622-10-5678": {
+    patient: {
+      name: "Siti Aminah binti Yusof",
+      dob: "1975-06-22",
+      nsn: "750622-10-5678",
+      gender: "Female",
+      age: 51,
+    },
+    mpisData: {
+      race: "Malay",
+      ethnicity: "Malaysian",
+      allergies: "Penicillin",
+      comorbidities: ["Asthma", "Obesity"],
+      currentMeds: [
+        { name: "Salbutamol Inhaler", dose: "100mcg", frequency: "PRN" },
+        { name: "Budesonide Inhaler", dose: "200mcg", frequency: "BD" },
+      ],
+    },
+  },
+  "680910-14-9012": {
+    patient: {
+      name: "Rajesh a/l Krishnan",
+      dob: "1968-09-10",
+      nsn: "680910-14-9012",
+      gender: "Male",
+      age: 58,
+    },
+    mpisData: {
+      race: "Indian",
+      ethnicity: "Malaysian",
+      allergies: "Sulfa drugs",
+      comorbidities: ["Coronary Artery Disease", "Type 2 Diabetes Mellitus", "Chronic Kidney Disease Stage 3"],
+      currentMeds: [
+        { name: "Aspirin", dose: "100mg", frequency: "OD" },
+        { name: "Metformin", dose: "500mg", frequency: "BD" },
+        { name: "Clopidogrel", dose: "75mg", frequency: "OD" },
+        { name: "Bisoprolol", dose: "5mg", frequency: "OD" },
+      ],
+    },
+  },
+  "850415-07-3456": {
+    patient: {
+      name: "Lee Wei Ming",
+      dob: "1985-04-15",
+      nsn: "850415-07-3456",
+      gender: "Male",
+      age: 41,
+    },
+    mpisData: {
+      race: "Chinese",
+      ethnicity: "Malaysian",
+      allergies: "None known",
+      comorbidities: [],
+      currentMeds: [],
+    },
+  },
+};
+
 export const sampleClinicalNotes = {
   history: `Patient reports persistently high home glucose readings (fasting 12-15, postprandial >15) over 3 months a/w polydipsia and polyuria. Admits non-compliance to meds. Exam: BP 142/86, diminished light touch sensation on bilateral big toes. No wounds.`,
 };
@@ -49,7 +144,7 @@ export const sampleDiagnosis = {
 
 export const sampleCarePlan = {
   clinicalSummary: `68-year-old Malay male with poorly controlled Type 2 Diabetes Mellitus (suspected HbA1c >9%), presenting with classic hyperglycemic symptoms (polydipsia, polyuria) and evidence of early peripheral neuropathy. Current glycemic control inadequate on Metformin and Glipizide. Cardiovascular risk factors include hypertension (BP 142/86) and obesity (BMI 31.8). Requires medication optimization and intensification of diabetes management.`,
-  
+
   interventions: [
     {
       id: 1,

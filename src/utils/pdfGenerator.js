@@ -47,7 +47,7 @@ export function generateCarePlanPDF({ patient, diagnosis, carePlan }) {
     doc.text(label + ':', margin + indent, yPos);
     doc.setFont('helvetica', 'normal');
     const labelWidth = doc.getTextWidth(label + ': ');
-    
+
     // Handle long text with wrapping
     const maxWidth = pageWidth - margin * 2 - labelWidth - indent;
     const lines = doc.splitTextToSize(String(value || 'N/A'), maxWidth);
@@ -58,25 +58,25 @@ export function generateCarePlanPDF({ patient, diagnosis, carePlan }) {
   // ===== HEADER =====
   doc.setFillColor(11, 94, 60); // primary-900
   doc.rect(0, 0, pageWidth, 35, 'F');
-  
+
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
   doc.text('MHNexus CPG LLM', margin, 15);
-  
+
   doc.setFontSize(12);
   doc.setFont('helvetica', 'normal');
   doc.text('AI-Generated Care Plan Report', margin, 23);
-  
+
   doc.setFontSize(9);
   doc.text(`Generated: ${new Date().toLocaleString()}`, margin, 30);
-  
+
   doc.setTextColor(0, 0, 0);
   yPos = 45;
 
   // ===== PATIENT INFORMATION =====
   addSectionHeader('PATIENT INFORMATION');
-  
+
   doc.autoTable({
     startY: yPos,
     margin: { left: margin, right: margin },
@@ -85,7 +85,7 @@ export function generateCarePlanPDF({ patient, diagnosis, carePlan }) {
     body: [
       ['Name', patient?.name || 'N/A', 'Age', patient?.age ? `${patient.age} years` : 'N/A'],
       ['Gender', patient?.gender || 'N/A', 'DOB', patient?.dob || 'N/A'],
-      ['NSN', patient?.nsn || 'N/A', '', ''],
+      ['NRIC', patient?.nsn || 'N/A', '', ''],
     ],
     columnStyles: {
       0: { fontStyle: 'bold', cellWidth: 30 },
@@ -98,7 +98,7 @@ export function generateCarePlanPDF({ patient, diagnosis, carePlan }) {
 
   // ===== DIAGNOSIS =====
   addSectionHeader('PRIMARY DIAGNOSIS');
-  
+
   addText('Diagnosis', selectedDiagnosis?.name);
   addText('ICD-10 Code', selectedDiagnosis?.icdCode);
   addText('Probability', `${selectedDiagnosis?.probability}%`);
@@ -117,7 +117,7 @@ export function generateCarePlanPDF({ patient, diagnosis, carePlan }) {
 
   // ===== MEDICATION CHANGES =====
   addSectionHeader('MEDICATION MANAGEMENT');
-  
+
   // STOP medications
   const stopMeds = carePlan?.medications?.stop?.filter(m => m.accepted !== false) || [];
   if (stopMeds.length > 0) {
@@ -173,7 +173,7 @@ export function generateCarePlanPDF({ patient, diagnosis, carePlan }) {
   const interventions = carePlan?.interventions?.filter(i => i.accepted !== false) || [];
   if (interventions.length > 0) {
     addSectionHeader('INTERVENTIONS & PROCEDURES');
-    
+
     doc.autoTable({
       startY: yPos,
       margin: { left: margin, right: margin },
@@ -189,7 +189,7 @@ export function generateCarePlanPDF({ patient, diagnosis, carePlan }) {
   const investigations = carePlan?.investigations?.filter(i => i.accepted !== false) || [];
   if (investigations.length > 0) {
     addSectionHeader('LABORATORY INVESTIGATIONS');
-    
+
     doc.autoTable({
       startY: yPos,
       margin: { left: margin, right: margin },
@@ -217,10 +217,10 @@ export function generateCarePlanPDF({ patient, diagnosis, carePlan }) {
   // ===== DISPOSITION =====
   if (carePlan?.disposition) {
     addSectionHeader('DISPOSITION & FOLLOW-UP');
-    
+
     addText('Follow-up', carePlan.disposition.followUp);
     yPos += 3;
-    
+
     if (carePlan.disposition.referrals?.length > 0) {
       doc.setFont('helvetica', 'bold');
       doc.text('Referrals:', margin, yPos);
@@ -258,7 +258,7 @@ export function generateCarePlanPDF({ patient, diagnosis, carePlan }) {
       doc.internal.pageSize.getHeight() - 10,
       { align: 'center' }
     );
-    
+
     // Disclaimer
     doc.setFontSize(7);
     doc.text(

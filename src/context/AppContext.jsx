@@ -6,6 +6,7 @@ import {
   sampleMPISData,
   sampleDiagnosis,
   sampleCarePlan,
+  mpisPatientDatabase,
 } from '../data/sampleData';
 
 const AppContext = createContext();
@@ -57,12 +58,12 @@ function appReducer(state, action) {
     case 'SET_DIAGNOSIS':
       return { ...state, diagnosis: action.payload };
     case 'SELECT_DIAGNOSIS':
-      return { 
-        ...state, 
-        diagnosis: { 
-          ...state.diagnosis, 
-          selectedDiagnosisId: action.payload 
-        } 
+      return {
+        ...state,
+        diagnosis: {
+          ...state.diagnosis,
+          selectedDiagnosisId: action.payload
+        }
       };
     case 'SET_CARE_PLAN':
       return { ...state, carePlan: action.payload };
@@ -125,11 +126,22 @@ export function AppProvider({ children }) {
     dispatch({ type: 'LOAD_DEMO_DATA' });
   };
 
-  const syncMPIS = () => {
+  const syncMPIS = (nsn) => {
     return new Promise((resolve) => {
       setTimeout(() => {
-        dispatch({ type: 'SET_MPIS_DATA', payload: sampleMPISData });
-        resolve(sampleMPISData);
+        // Lookup patient by NRIC in the mock database
+        const patientRecord = mpisPatientDatabase[nsn];
+
+        if (patientRecord) {
+          // Patient found - auto-populate both patient and MPIS data
+          dispatch({ type: 'SET_PATIENT', payload: patientRecord.patient });
+          dispatch({ type: 'SET_MPIS_DATA', payload: patientRecord.mpisData });
+          resolve({ found: true, patient: patientRecord.patient, mpisData: patientRecord.mpisData });
+        } else {
+          // Patient not found - just set the NRIC in patient data
+          dispatch({ type: 'SET_PATIENT', payload: { nsn: nsn } });
+          resolve({ found: false, nsn: nsn });
+        }
       }, 1500);
     });
   };

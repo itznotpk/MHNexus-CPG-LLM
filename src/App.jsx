@@ -13,6 +13,7 @@ import { StepIndicator, GlassPanel } from './components/shared';
 import Home from './components/pages/Home';
 import MyPatients from './components/pages/MyPatients';
 import Settings from './components/pages/Settings';
+import PatientChart from './components/pages/PatientChart';
 
 const steps = [
   { id: 1, label: 'Data Input' },
@@ -25,8 +26,20 @@ function AppContent() {
   const { state, dispatch } = useApp();
   const { isDark } = useTheme();
   const { currentStep } = state;
-  const [currentView, setCurrentView] = useState('dashboard'); // dashboard, patients, consultation, settings
+  const [currentView, setCurrentView] = useState('dashboard'); // dashboard, patients, consultation, settings, chart
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [chartPatient, setChartPatient] = useState(null);
+
+  // Shared profile state
+  const [profile, setProfile] = useState({
+    name: 'Dr. Tay',
+    email: 'dr.tay@mhnexus.com',
+    phone: '+60 12-345 6789',
+    specialty: 'Family Medicine',
+    license: 'MMC-12345',
+    facility: 'Hospital Kuala Lumpur',
+    department: 'Primary Care Unit'
+  });
 
   const handleNavigate = (view) => {
     setCurrentView(view);
@@ -34,8 +47,8 @@ function AppContent() {
 
   const handleStartConsult = (patient, triage) => {
     // Pre-fill patient data and navigate to consultation
-    dispatch({ 
-      type: 'SET_PATIENT', 
+    dispatch({
+      type: 'SET_PATIENT',
       payload: {
         name: patient.name,
         age: patient.age,
@@ -44,7 +57,7 @@ function AppContent() {
         dob: '' // Can be calculated from age if needed
       }
     });
-    
+
     // Set vitals from triage if available
     if (triage?.vitals) {
       const [systolic, diastolic] = triage.vitals.bp.split('/');
@@ -63,7 +76,7 @@ function AppContent() {
         }
       });
     }
-    
+
     // Set clinical notes from chief complaint
     if (triage?.chiefComplaint) {
       dispatch({
@@ -71,7 +84,7 @@ function AppContent() {
         payload: `Chief Complaint: ${triage.chiefComplaint}\n\n${triage.notes || ''}`
       });
     }
-    
+
     // Reset to step 1 and navigate to consultation
     dispatch({ type: 'RESET' });
     setCurrentView('consultation');
@@ -83,15 +96,14 @@ function AppContent() {
   };
 
   const handleViewChart = (patient) => {
-    // For now, navigate to consultation with patient data
-    // In a full implementation, this would show a read-only chart view
-    console.log('Viewing chart for:', patient);
+    setChartPatient(patient);
+    setCurrentView('chart');
   };
 
   const renderCurrentSection = () => {
     switch (currentStep) {
       case 1:
-        return <DataInputSection />;
+        return <DataInputSection onViewChart={handleViewChart} />;
       case 2:
         return <DiagnosisSection />;
       case 3:
@@ -99,14 +111,14 @@ function AppContent() {
       case 4:
         return <OutputSection />;
       default:
-        return <DataInputSection />;
+        return <DataInputSection onViewChart={handleViewChart} />;
     }
   };
 
   const renderMainContent = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Home onStartConsult={handleStartConsult} />;
+        return <Home onStartConsult={handleStartConsult} onViewChart={handleViewChart} />;
       case 'patients':
         return <MyPatients onViewChart={handleViewChart} onNewPatient={handleNewPatient} />;
       case 'consultation':
@@ -124,31 +136,32 @@ function AppContent() {
           </>
         );
       case 'settings':
-        return <Settings />;
+        return <Settings profile={profile} setProfile={setProfile} />;
+      case 'chart':
+        return <PatientChart patient={chartPatient} onBack={() => setCurrentView('patients')} />;
       default:
-        return <Home onStartConsult={handleStartConsult} />;
+        return <Home onStartConsult={handleStartConsult} onViewChart={handleViewChart} />;
     }
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
-      isDark 
-        ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' 
-        : 'bg-gradient-to-br from-slate-100 via-white to-slate-100'
-    }`}>
+    <div className={`min-h-screen transition-colors duration-300 ${isDark
+      ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900'
+      : 'bg-gradient-to-br from-slate-100 via-white to-slate-100'
+      }`}>
       {/* Sidebar */}
-      <Sidebar 
+      <Sidebar
         currentView={currentView}
         onNavigate={handleNavigate}
         isCollapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        profile={profile}
       />
 
       {/* Main Content Area */}
-      <main 
-        className={`min-h-screen transition-all duration-300 ${
-          sidebarCollapsed ? 'ml-20' : 'ml-64'
-        }`}
+      <main
+        className={`min-h-screen transition-all duration-300 ${sidebarCollapsed ? 'ml-20' : 'ml-64'
+          }`}
       >
         <div className="p-6 lg:p-8">
           {renderMainContent()}

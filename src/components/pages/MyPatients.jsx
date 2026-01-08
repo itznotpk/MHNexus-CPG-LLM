@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { 
-  Search, 
-  Filter, 
-  UserPlus, 
-  FileText, 
+import {
+  Search,
+  Filter,
+  UserPlus,
+  FileText,
   Calendar,
   ChevronRight,
   User,
@@ -13,7 +13,14 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  RotateCcw
+  RotateCcw,
+  History,
+  Pill,
+  Activity,
+  X,
+  Stethoscope,
+  TestTube,
+  AlertTriangle
 } from 'lucide-react';
 import { patientRegistry } from '../../data/scheduleData';
 import { GlassCard } from '../shared/GlassCard';
@@ -25,14 +32,48 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
   const [statusFilter, setStatusFilter] = useState('all'); // all, active, discharged, follow-up
   const [patients, setPatients] = useState(patientRegistry);
   const [selectedPatient, setSelectedPatient] = useState(null);
+  const [showMedicalHistory, setShowMedicalHistory] = useState(false);
+  const [historyPatient, setHistoryPatient] = useState(null);
+
+  // Avatar color palette for patients
+  const avatarColors = [
+    'from-cyan-500 to-blue-500',
+    'from-emerald-500 to-teal-500',
+    'from-purple-500 to-pink-500',
+    'from-orange-500 to-amber-500',
+    'from-rose-500 to-red-500',
+    'from-indigo-500 to-violet-500',
+    'from-lime-500 to-green-500',
+    'from-fuchsia-500 to-purple-500',
+  ];
+
+  // Get initials from name
+  const getInitials = (name) => {
+    if (!name) return 'P';
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  // Get consistent color based on name
+  const getAvatarColor = (name) => {
+    if (!name) return avatarColors[0];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return avatarColors[Math.abs(hash) % avatarColors.length];
+  };
 
   const filteredPatients = patients.filter(patient => {
-    const matchesSearch = 
+    const matchesSearch =
       patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       patient.nsn.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === 'all' || patient.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -61,7 +102,7 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
     };
     const cfg = config[level];
     return (
-      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${cfg.bg} ${cfg.text}`}>
+      <span className={`px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${cfg.bg} ${cfg.text}`}>
         {level.charAt(0).toUpperCase() + level.slice(1)} Risk
       </span>
     );
@@ -101,12 +142,12 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
             <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
             <input
               type="text"
-              placeholder="Search by name or NSN..."
+              placeholder="Search by name or NRIC..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className={`w-full pl-10 pr-4 py-2.5 rounded-xl border transition-all
-                ${isDark 
-                  ? 'bg-white/5 border-white/10 text-white placeholder-slate-500 focus:border-[var(--accent-primary)]/50' 
+                ${isDark
+                  ? 'bg-white/5 border-white/10 text-white placeholder-slate-500 focus:border-[var(--accent-primary)]/50'
                   : 'bg-white border-slate-200 text-slate-800 placeholder-slate-400 focus:border-[var(--accent-primary)]'
                 } focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/20`}
             />
@@ -126,7 +167,7 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all
                   ${statusFilter === tab.key
                     ? `bg-[var(--accent-primary)]/20 ${accent.text} border border-[var(--accent-primary)]/30`
-                    : isDark 
+                    : isDark
                       ? 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-transparent'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 border border-transparent'
                   }`}
@@ -145,7 +186,7 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
             <thead>
               <tr className={`border-b ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
                 <th className={`text-left p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Patient</th>
-                <th className={`text-left p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>NSN</th>
+                <th className={`text-left p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>NRIC</th>
                 <th className={`text-left p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Status</th>
                 <th className={`text-left p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Diagnoses</th>
                 <th className={`text-left p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Next Review (TCA)</th>
@@ -155,72 +196,195 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
             </thead>
             <tbody>
               {filteredPatients.map((patient) => (
-                <tr 
-                  key={patient.id}
-                  className={`border-b transition-colors cursor-pointer
-                    ${isDark ? 'border-white/5 hover:bg-white/5' : 'border-slate-100 hover:bg-slate-50'}`}
-                  onClick={() => setSelectedPatient(selectedPatient?.id === patient.id ? null : patient)}
-                >
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center
-                        ${isDark ? 'bg-gradient-to-br from-slate-600 to-slate-700' : 'bg-gradient-to-br from-slate-300 to-slate-400'}`}>
-                        <User className={`w-5 h-5 ${isDark ? 'text-slate-300' : 'text-white'}`} />
-                      </div>
-                      <div>
-                        <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{patient.name}</p>
-                        <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{patient.age} y/o • {patient.gender}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <span className={`text-sm font-mono ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{patient.nsn}</span>
-                  </td>
-                  <td className="p-4">
-                    {getStatusBadge(patient.status)}
-                  </td>
-                  <td className="p-4">
-                    <div className="max-w-xs">
-                      <p className={`text-sm truncate ${isDark ? 'text-white' : 'text-slate-800'}`}>{patient.diagnoses[0]}</p>
-                      {patient.diagnoses.length > 1 && (
-                        <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>+{patient.diagnoses.length - 1} more</p>
-                      )}
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    {patient.nextReview ? (
-                      <div className="flex items-center gap-2">
-                        <Calendar className={`w-4 h-4 ${accent.text}`} />
+                <React.Fragment key={patient.id}>
+                  <tr
+                    className={`border-b transition-colors cursor-pointer
+                      ${selectedPatient?.id === patient.id
+                        ? isDark ? 'bg-[var(--accent-primary)]/10' : 'bg-[var(--accent-primary)]/5'
+                        : isDark ? 'border-white/5 hover:bg-white/5' : 'border-slate-100 hover:bg-slate-50'
+                      }`}
+                    onClick={() => setSelectedPatient(selectedPatient?.id === patient.id ? null : patient)}
+                  >
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br ${getAvatarColor(patient.name)} text-white font-bold text-sm`}>
+                          {getInitials(patient.name)}
+                        </div>
                         <div>
-                          <p className={`text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>{patient.nextReview}</p>
-                          <p className={`text-xs font-medium ${patient.tcaDays <= 3 ? 'text-amber-500' : isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                            TCA: {patient.tcaDays} {patient.tcaDays === 1 ? 'Day' : 'Days'}
-                          </p>
+                          <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{patient.name}</p>
+                          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{patient.age} y/o • {patient.gender}</p>
                         </div>
                       </div>
-                    ) : (
-                      <span className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>—</span>
-                    )}
-                  </td>
-                  <td className="p-4">
-                    {getRiskBadge(patient.riskLevel)}
-                  </td>
-                  <td className="p-4 text-right">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onViewChart && onViewChart(patient);
-                      }}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all
-                        ${isDark 
-                          ? 'bg-white/5 hover:bg-white/10 text-slate-200 hover:text-white border border-white/10' 
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200'}`}
-                    >
-                      <FileText className="w-4 h-4" />
-                      View Chart
-                    </button>
-                  </td>
-                </tr>
+                    </td>
+                    <td className="p-4">
+                      <span className={`text-sm font-mono ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{patient.nsn}</span>
+                    </td>
+                    <td className="p-4">
+                      {getStatusBadge(patient.status)}
+                    </td>
+                    <td className="p-4">
+                      <div className="max-w-[200px]">
+                        {patient.diagnoses.map((dx, i) => (
+                          <p key={i} className={`text-sm ${i > 0 ? 'mt-1' : ''} ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                            • {dx}
+                          </p>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      {patient.nextReview ? (
+                        <div className="flex items-center gap-2">
+                          <Calendar className={`w-4 h-4 ${accent.text}`} />
+                          <div>
+                            <p className={`text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>{patient.nextReview}</p>
+                            <p className={`text-xs font-medium ${patient.tcaDays <= 3 ? 'text-amber-500' : isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                              TCA: {patient.tcaDays} {patient.tcaDays === 1 ? 'Day' : 'Days'}
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>—</span>
+                      )}
+                    </td>
+                    <td className="p-4">
+                      {getRiskBadge(patient.riskLevel)}
+                    </td>
+                    <td className="p-4 text-right">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onViewChart && onViewChart(patient);
+                        }}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all
+                          bg-gradient-to-r ${accent.gradient} text-white hover:opacity-90 shadow-sm`}
+                      >
+                        <FileText className="w-4 h-4" />
+                        View Chart
+                      </button>
+                    </td>
+                  </tr>
+
+                  {/* Expandable Detail Row */}
+                  {selectedPatient?.id === patient.id && (
+                    <tr>
+                      <td colSpan="7" className={`p-0 ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+                        <div className="p-6">
+                          <div className="flex items-start justify-between mb-6">
+                            <div className="flex items-center gap-4">
+                              <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${getAvatarColor(patient.name)}
+                                flex items-center justify-center text-white text-xl font-bold`}>
+                                {getInitials(patient.name)}
+                              </div>
+                              <div>
+                                <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>{patient.name}</h2>
+                                <p className={isDark ? 'text-slate-300' : 'text-slate-600'}>
+                                  {patient.age} years old • {patient.gender} • {patient.nsn}
+                                </p>
+                                <div className="flex items-center gap-3 mt-2">
+                                  {getStatusBadge(patient.status)}
+                                  {getRiskBadge(patient.riskLevel)}
+                                </div>
+                              </div>
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedPatient(null);
+                              }}
+                              className={`${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-800'} transition-colors`}
+                            >
+                              ✕
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* Contact Info */}
+                            <div className="space-y-3">
+                              <h3 className={`text-sm font-medium uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Contact</h3>
+                              <div className="space-y-2">
+                                <p className={`flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                                  <Phone className={`w-4 h-4 ${accent.text}`} />
+                                  {patient.phone}
+                                </p>
+                                <p className={`flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                                  <Mail className={`w-4 h-4 ${accent.text}`} />
+                                  {patient.email}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Diagnoses */}
+                            <div className="space-y-3">
+                              <h3 className={`text-sm font-medium uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Diagnoses</h3>
+                              <div className="space-y-2">
+                                {patient.diagnoses.map((dx, i) => (
+                                  <p key={i} className={`text-sm flex items-start gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                                    <span className={`mt-0.5 ${accent.text}`}>•</span>
+                                    {dx}
+                                  </p>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Visit Info */}
+                            <div className="space-y-3">
+                              <h3 className={`text-sm font-medium uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Visit Info</h3>
+                              <div className="space-y-2">
+                                <p className={`flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                                  <Clock className={`w-4 h-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
+                                  Last Visit: {patient.lastVisit}
+                                </p>
+                                {patient.nextReview && (
+                                  <p className={`flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                                    <Calendar className={`w-4 h-4 ${accent.text}`} />
+                                    Next Review: {patient.nextReview}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className={`flex items-center gap-3 mt-6 pt-6 border-t ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onViewChart && onViewChart(patient);
+                              }}
+                              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium
+                                bg-gradient-to-r ${accent.gradient} text-white transition-all`}
+                            >
+                              <FileText className="w-4 h-4" />
+                              View Full Chart
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setHistoryPatient(patient);
+                                setShowMedicalHistory(true);
+                              }}
+                              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all
+                                ${isDark
+                                  ? 'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 border border-purple-500/30'
+                                  : 'bg-purple-100 text-purple-700 hover:bg-purple-200 border border-purple-200'}`}
+                            >
+                              <History className="w-4 h-4" />
+                              Medical History
+                            </button>
+                            <button
+                              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all
+                                ${isDark
+                                  ? 'bg-white/5 text-white hover:bg-white/10 border border-white/10'
+                                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'}`}
+                            >
+                              <Calendar className="w-4 h-4" />
+                              Schedule Follow-up
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>
@@ -234,101 +398,197 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
         )}
       </GlassCard>
 
-      {/* Patient Detail Panel (Expandable) */}
-      {selectedPatient && (
-        <GlassCard className="p-6" variant={isDark ? 'dark' : 'light'}>
-          <div className="flex items-start justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${accent.gradient}
-                flex items-center justify-center text-white text-xl font-bold`}>
-                {selectedPatient.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
-              </div>
-              <div>
-                <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>{selectedPatient.name}</h2>
-                <p className={isDark ? 'text-slate-300' : 'text-slate-600'}>
-                  {selectedPatient.age} years old • {selectedPatient.gender} • {selectedPatient.nsn}
-                </p>
-                <div className="flex items-center gap-3 mt-2">
-                  {getStatusBadge(selectedPatient.status)}
-                  {getRiskBadge(selectedPatient.riskLevel)}
+      {/* Medical History Modal */}
+      {showMedicalHistory && historyPatient && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowMedicalHistory(false)} />
+          <div className={`relative w-full max-w-4xl max-h-[85vh] rounded-2xl shadow-2xl overflow-hidden
+            ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
+
+            {/* Modal Header */}
+            <div className={`flex items-center justify-between p-6 border-b ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getAvatarColor(historyPatient.name)} 
+                  flex items-center justify-center text-white font-bold`}>
+                  {getInitials(historyPatient.name)}
+                </div>
+                <div>
+                  <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                    Medical History
+                  </h2>
+                  <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {historyPatient.name} • {historyPatient.nsn}
+                  </p>
                 </div>
               </div>
-            </div>
-            <button
-              onClick={() => setSelectedPatient(null)}
-              className={`${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-800'} transition-colors`}
-            >
-              ✕
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Contact Info */}
-            <div className="space-y-3">
-              <h3 className={`text-sm font-medium uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Contact</h3>
-              <div className="space-y-2">
-                <p className={`flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                  <Phone className={`w-4 h-4 ${accent.text}`} />
-                  {selectedPatient.phone}
-                </p>
-                <p className={`flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                  <Mail className={`w-4 h-4 ${accent.text}`} />
-                  {selectedPatient.email}
-                </p>
-              </div>
+              <button
+                onClick={() => setShowMedicalHistory(false)}
+                className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10' : 'hover:bg-slate-100'}`}
+              >
+                <X className={`w-5 h-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
+              </button>
             </div>
 
-            {/* Diagnoses */}
-            <div className="space-y-3">
-              <h3 className={`text-sm font-medium uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Diagnoses</h3>
-              <div className="space-y-2">
-                {selectedPatient.diagnoses.map((dx, i) => (
-                  <p key={i} className={`text-sm flex items-start gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                    <span className={`mt-0.5 ${accent.text}`}>•</span>
-                    {dx}
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(85vh-100px)]">
+              {historyPatient.medicalHistory ? (
+                <div className="space-y-6">
+                  {/* Allergies Alert */}
+                  {historyPatient.medicalHistory.allergies?.length > 0 && (
+                    <div className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/30">
+                      <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-red-500">Allergies</p>
+                        <p className={`text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                          {historyPatient.medicalHistory.allergies.join(', ')}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Conditions */}
+                  <div>
+                    <h3 className={`flex items-center gap-2 text-sm font-semibold uppercase mb-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      <Stethoscope className="w-4 h-4" /> Medical Conditions
+                    </h3>
+                    <div className={`rounded-xl overflow-hidden border ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
+                      <table className="w-full">
+                        <thead className={isDark ? 'bg-white/5' : 'bg-slate-50'}>
+                          <tr>
+                            <th className={`text-left p-3 text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Condition</th>
+                            <th className={`text-left p-3 text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Diagnosed</th>
+                            <th className={`text-left p-3 text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {historyPatient.medicalHistory.conditions.map((cond, i) => (
+                            <tr key={i} className={`border-t ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
+                              <td className={`p-3 text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>{cond.name}</td>
+                              <td className={`p-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{cond.diagnosedDate}</td>
+                              <td className="p-3">
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium
+                                  ${cond.status === 'Active' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-slate-500/20 text-slate-400'}`}>
+                                  {cond.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Medications */}
+                  <div>
+                    <h3 className={`flex items-center gap-2 text-sm font-semibold uppercase mb-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      <Pill className="w-4 h-4" /> Medications
+                    </h3>
+                    <div className={`rounded-xl overflow-hidden border ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
+                      <table className="w-full">
+                        <thead className={isDark ? 'bg-white/5' : 'bg-slate-50'}>
+                          <tr>
+                            <th className={`text-left p-3 text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Medication</th>
+                            <th className={`text-left p-3 text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Dosage</th>
+                            <th className={`text-left p-3 text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Start Date</th>
+                            <th className={`text-left p-3 text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {historyPatient.medicalHistory.medications.map((med, i) => (
+                            <tr key={i} className={`border-t ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
+                              <td className={`p-3 text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>{med.name}</td>
+                              <td className={`p-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{med.dosage}</td>
+                              <td className={`p-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{med.startDate}</td>
+                              <td className="p-3">
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium
+                                  ${med.status === 'Current' ? 'bg-blue-500/20 text-blue-500' : 'bg-slate-500/20 text-slate-400'}`}>
+                                  {med.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Lab Results */}
+                  <div>
+                    <h3 className={`flex items-center gap-2 text-sm font-semibold uppercase mb-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      <TestTube className="w-4 h-4" /> Recent Lab Results
+                    </h3>
+                    <div className={`rounded-xl overflow-hidden border ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
+                      <table className="w-full">
+                        <thead className={isDark ? 'bg-white/5' : 'bg-slate-50'}>
+                          <tr>
+                            <th className={`text-left p-3 text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Test</th>
+                            <th className={`text-left p-3 text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Result</th>
+                            <th className={`text-left p-3 text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Date</th>
+                            <th className={`text-left p-3 text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {historyPatient.medicalHistory.labResults.map((lab, i) => (
+                            <tr key={i} className={`border-t ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
+                              <td className={`p-3 text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>{lab.test}</td>
+                              <td className={`p-3 text-sm font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{lab.value}</td>
+                              <td className={`p-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{lab.date}</td>
+                              <td className="p-3">
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium
+                                  ${lab.status === 'Normal' ? 'bg-emerald-500/20 text-emerald-500'
+                                    : lab.status === 'High' ? 'bg-red-500/20 text-red-500'
+                                      : 'bg-amber-500/20 text-amber-500'}`}>
+                                  {lab.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Procedures */}
+                  <div>
+                    <h3 className={`flex items-center gap-2 text-sm font-semibold uppercase mb-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      <Activity className="w-4 h-4" /> Procedures & Tests
+                    </h3>
+                    <div className={`rounded-xl overflow-hidden border ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
+                      <table className="w-full">
+                        <thead className={isDark ? 'bg-white/5' : 'bg-slate-50'}>
+                          <tr>
+                            <th className={`text-left p-3 text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Procedure</th>
+                            <th className={`text-left p-3 text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Date</th>
+                            <th className={`text-left p-3 text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Result</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {historyPatient.medicalHistory.procedures.map((proc, i) => (
+                            <tr key={i} className={`border-t ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
+                              <td className={`p-3 text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>{proc.name}</td>
+                              <td className={`p-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{proc.date}</td>
+                              <td className={`p-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{proc.result}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <History className={`w-12 h-12 mx-auto mb-4 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
+                  <p className={`text-lg font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    No medical history available
                   </p>
-                ))}
-              </div>
-            </div>
-
-            {/* Visit Info */}
-            <div className="space-y-3">
-              <h3 className={`text-sm font-medium uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Visit Info</h3>
-              <div className="space-y-2">
-                <p className={`flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                  <Clock className={`w-4 h-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
-                  Last Visit: {selectedPatient.lastVisit}
-                </p>
-                {selectedPatient.nextReview && (
-                  <p className={`flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                    <Calendar className={`w-4 h-4 ${accent.text}`} />
-                    Next Review: {selectedPatient.nextReview}
+                  <p className={`text-sm mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                    Medical records for this patient have not been uploaded yet.
                   </p>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
-
-          <div className={`flex items-center gap-3 mt-6 pt-6 border-t ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
-            <button
-              onClick={() => onViewChart && onViewChart(selectedPatient)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium
-                bg-gradient-to-r ${accent.gradient} text-white transition-all`}
-            >
-              <FileText className="w-4 h-4" />
-              View Full Chart
-            </button>
-            <button
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all
-                ${isDark 
-                  ? 'bg-white/5 text-white hover:bg-white/10 border border-white/10' 
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'}`}
-            >
-              <Calendar className="w-4 h-4" />
-              Schedule Follow-up
-            </button>
-          </div>
-        </GlassCard>
+        </div>
       )}
     </div>
   );

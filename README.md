@@ -11,8 +11,11 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application built wit
 
 ## 🌟 Features
 
-**Latest Update (2026-01-08):**
-- UI/UX improvements: evidence text removed, sidebar consultation tab updated, approval workflow simplified, regenerate flow improved, diagnosis confidence % removed, button placements improved. See [CHANGELOG.md](CHANGELOG.md) for details.
+**Latest Update (2026-01-09):**
+- **Enhanced Patient Management**: colorful avatars, inline detail expansion in "My Patients", and restructured "Home" schedule.
+- **Advanced Clinical Features**: NRIC validation, "View Chart" consultation modal, and a comprehensive Medical History system.
+- **Workflow improvements**: Clinical notes confirmation step and dynamic doctor profile synchronization in the sidebar.
+- See [CHANGELOG.md](CHANGELOG.md) for details.
 
 ### 🏠 Sidebar Navigation & Dashboard
 
@@ -27,11 +30,12 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application built wit
 - **Toast Notifications**: Real-time feedback for user actions
 
 #### My Patients
-- **Patient Registry**: Searchable patient database
-- **Status Filters**: Active, Follow-up, Discharged tabs
-- **Quick Actions**: View history, schedule appointment, start consult
-- **Risk Indicators**: Visual badges for patient risk levels
-- **Expandable Details**: Full patient info without leaving the page
+- **Patient Registry**: Searchable patient database with initial-based colored avatars
+- **Status Filters**: Active, Follow-up, Discharged tabs for easy management
+- **Inline Expansion**: Click any patient row to view full details directly below it
+- **Medical History**: Access detailed historical data (conditions, meds, labs, procedures) in a dedicated modal
+- **Quick Actions**: View history, view vital charts, schedule appointment, and start consult
+- **Risk Indicators**: Visual badges and single-line displays for patient risk levels
 
 #### Settings
 - **Profile Management**: Name, specialty, license, contact info
@@ -42,11 +46,13 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application built wit
 ### 🔄 Core Workflow (4-Step Process)
 
 #### 1. Data Input Section
-- **Patient Demographics**: Name, MRN, Age, Gender, DOB, Blood Type
-- **MPIS Integration**: Mock sync with Malaysian Patient Information System
-- **Vitals Grid**: BP, Heart Rate, Temperature, SpO2, Respiratory Rate, Weight, Height, BMI (auto-calculated)
-- **Clinical Notes**: Free-text input with voice dictation support
-- **Known Allergies & Current Medications**: Structured input fields
+- **NRIC Validation**: Secure and formatted NSN lookup (`xxxxxx-xx-xxxx`) with real-time validation feedback.
+- **MPIS Auto-Fill**: If the NSN exists in MPIS, patient info is automatically retrieved and vital signs history is synced.
+- **Manual Entry if No MPIS**: Graceful fallback to manual data entry for new patients.
+- **Consultation Chart View**: Non-disruptive modal to view vital sign trends during patient assessment.
+- **Vitals Grid**: Structured input for BP, HR, Temp, SpO2, RR, and auto-calculated BMI.
+- **Clinical Notes**: Speech-to-text dictation support with a "Confirm" step for review before AI analysis.
+- **Medical Alerts**: Structured input for allergies and current medications.
 
 #### 2. AI Diagnosis Section
 - **AI-Generated Differential Diagnoses**: Ranked by probability

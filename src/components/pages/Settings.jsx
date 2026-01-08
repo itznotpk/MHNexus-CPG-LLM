@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { 
-  User, 
-  Bell, 
-  Shield, 
-  Palette, 
-  Globe, 
+import {
+  User,
+  Bell,
+  Shield,
+  Palette,
+  Globe,
   Database,
   Save,
   Camera,
@@ -16,12 +16,14 @@ import {
   Moon,
   Sun,
   Monitor,
-  Check
+  Check,
+  Edit3,
+  CheckCircle
 } from 'lucide-react';
 import { GlassCard } from '../shared/GlassCard';
 import { useTheme, accentColors } from '../../context/ThemeContext';
 
-const Settings = () => {
+const Settings = ({ profile, setProfile }) => {
   const { theme, setTheme, accentColor, setAccentColor, effectiveTheme, isDark } = useTheme();
   const [activeTab, setActiveTab] = useState('profile');
   const [notifications, setNotifications] = useState({
@@ -31,15 +33,14 @@ const Settings = () => {
     emergencyAlerts: true
   });
 
-  const [profile, setProfile] = useState({
-    name: 'Dr. Tay',
-    email: 'dr.tay@mhnexus.com',
-    phone: '+60 12-345 6789',
-    specialty: 'Family Medicine',
-    license: 'MMC-12345',
-    facility: 'Hospital Kuala Lumpur',
-    department: 'Primary Care Unit'
-  });
+  const [isProfileEditing, setIsProfileEditing] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
+  const handleSaveProfile = () => {
+    setIsProfileEditing(false);
+    setShowSuccessMessage(true);
+    setTimeout(() => setShowSuccessMessage(false), 3000);
+  };
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
@@ -56,101 +57,155 @@ const Settings = () => {
             flex items-center justify-center text-white text-2xl font-bold">
             T
           </div>
-          <button className={`absolute bottom-0 right-0 w-8 h-8 rounded-full 
-            border-2 flex items-center justify-center text-white
-            transition-colors ${isDark ? 'bg-slate-700 border-slate-800 hover:bg-slate-600' : 'bg-slate-500 border-slate-600 hover:bg-slate-400'}`}>
-            <Camera className="w-4 h-4" />
-          </button>
+          {isProfileEditing && (
+            <button className={`absolute bottom-0 right-0 w-8 h-8 rounded-full 
+              border-2 flex items-center justify-center text-white
+              transition-colors ${isDark ? 'bg-slate-700 border-slate-800 hover:bg-slate-600' : 'bg-slate-500 border-slate-600 hover:bg-slate-400'}`}>
+              <Camera className="w-4 h-4" />
+            </button>
+          )}
         </div>
-        <div className="flex-1 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="flex-1">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <label className={`block text-sm mb-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Full Name</label>
-              <input
-                type="text"
-                value={profile.name}
-                onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                className={`w-full px-4 py-2.5 rounded-xl border 
-                  focus:outline-none focus:border-cyan-500/50 transition-all
-                  ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-800'}`}
-              />
+              <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{profile.name}</h3>
+              <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{profile.specialty}</p>
             </div>
-            <div>
-              <label className={`block text-sm mb-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Specialty</label>
-              <input
-                type="text"
-                value={profile.specialty}
-                onChange={(e) => setProfile({ ...profile, specialty: e.target.value })}
-                className={`w-full px-4 py-2.5 rounded-xl border 
-                  focus:outline-none focus:border-cyan-500/50 transition-all
-                  ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-800'}`}
-              />
-            </div>
+            {!isProfileEditing && (
+              <button
+                onClick={() => setIsProfileEditing(true)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all
+                  ${isDark
+                    ? 'bg-white/10 hover:bg-white/20 text-white border border-white/10'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'}`}
+              >
+                <Edit3 className="w-4 h-4" />
+                Edit Profile
+              </button>
+            )}
           </div>
+          {isProfileEditing && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={`block text-sm mb-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Full Name</label>
+                <input
+                  type="text"
+                  value={profile.name}
+                  onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                  className={`w-full px-4 py-2.5 rounded-xl border 
+                    focus:outline-none focus:border-cyan-500/50 transition-all
+                    ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-800'}`}
+                />
+              </div>
+              <div>
+                <label className={`block text-sm mb-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Specialty</label>
+                <input
+                  type="text"
+                  value={profile.specialty}
+                  onChange={(e) => setProfile({ ...profile, specialty: e.target.value })}
+                  className={`w-full px-4 py-2.5 rounded-xl border 
+                    focus:outline-none focus:border-cyan-500/50 transition-all
+                    ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-800'}`}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className={`block text-sm mb-2 flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-            <Mail className="w-4 h-4" /> Email
-          </label>
-          <input
-            type="email"
-            value={profile.email}
-            onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-            className={`w-full px-4 py-2.5 rounded-xl border 
-              focus:outline-none focus:border-cyan-500/50 transition-all
-              ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-800'}`}
-          />
+      {isProfileEditing && (
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={`block text-sm mb-2 flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+              <Mail className="w-4 h-4" /> Email
+            </label>
+            <input
+              type="email"
+              value={profile.email}
+              onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+              className={`w-full px-4 py-2.5 rounded-xl border 
+                focus:outline-none focus:border-cyan-500/50 transition-all
+                ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-800'}`}
+            />
+          </div>
+          <div>
+            <label className={`block text-sm mb-2 flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+              <Phone className="w-4 h-4" /> Phone
+            </label>
+            <input
+              type="tel"
+              value={profile.phone}
+              onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+              className={`w-full px-4 py-2.5 rounded-xl border 
+                focus:outline-none focus:border-cyan-500/50 transition-all
+                ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-800'}`}
+            />
+          </div>
+          <div>
+            <label className={`block text-sm mb-2 flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+              <Award className="w-4 h-4" /> Medical License
+            </label>
+            <input
+              type="text"
+              value={profile.license}
+              onChange={(e) => setProfile({ ...profile, license: e.target.value })}
+              className={`w-full px-4 py-2.5 rounded-xl border 
+                focus:outline-none focus:border-cyan-500/50 transition-all
+                ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-800'}`}
+            />
+          </div>
+          <div>
+            <label className={`block text-sm mb-2 flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+              <Building className="w-4 h-4" /> Facility
+            </label>
+            <input
+              type="text"
+              value={profile.facility}
+              onChange={(e) => setProfile({ ...profile, facility: e.target.value })}
+              className={`w-full px-4 py-2.5 rounded-xl border 
+                focus:outline-none focus:border-cyan-500/50 transition-all
+                ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-800'}`}
+            />
+          </div>
         </div>
-        <div>
-          <label className={`block text-sm mb-2 flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-            <Phone className="w-4 h-4" /> Phone
-          </label>
-          <input
-            type="tel"
-            value={profile.phone}
-            onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-            className={`w-full px-4 py-2.5 rounded-xl border 
-              focus:outline-none focus:border-cyan-500/50 transition-all
-              ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-800'}`}
-          />
+      )}
+
+      {/* View-only mode info display */}
+      {!isProfileEditing && (
+        <div className="grid grid-cols-2 gap-4">
+          <div className={`p-3 rounded-xl ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+            <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Email</p>
+            <p className={`text-sm font-medium flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+              <Mail className="w-4 h-4" /> {profile.email}
+            </p>
+          </div>
+          <div className={`p-3 rounded-xl ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+            <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Phone</p>
+            <p className={`text-sm font-medium flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+              <Phone className="w-4 h-4" /> {profile.phone}
+            </p>
+          </div>
+          <div className={`p-3 rounded-xl ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+            <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Medical License</p>
+            <p className={`text-sm font-medium flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+              <Award className="w-4 h-4" /> {profile.license}
+            </p>
+          </div>
+          <div className={`p-3 rounded-xl ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+            <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Facility</p>
+            <p className={`text-sm font-medium flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+              <Building className="w-4 h-4" /> {profile.facility}
+            </p>
+          </div>
         </div>
-        <div>
-          <label className={`block text-sm mb-2 flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-            <Award className="w-4 h-4" /> Medical License
-          </label>
-          <input
-            type="text"
-            value={profile.license}
-            onChange={(e) => setProfile({ ...profile, license: e.target.value })}
-            className={`w-full px-4 py-2.5 rounded-xl border 
-              focus:outline-none focus:border-cyan-500/50 transition-all
-              ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-800'}`}
-          />
-        </div>
-        <div>
-          <label className={`block text-sm mb-2 flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-            <Building className="w-4 h-4" /> Facility
-          </label>
-          <input
-            type="text"
-            value={profile.facility}
-            onChange={(e) => setProfile({ ...profile, facility: e.target.value })}
-            className={`w-full px-4 py-2.5 rounded-xl border 
-              focus:outline-none focus:border-cyan-500/50 transition-all
-              ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-800'}`}
-          />
-        </div>
-      </div>
+      )}
     </div>
   );
 
   const renderNotificationSettings = () => (
     <div className="space-y-6">
       <p className={`${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Configure how you receive notifications and alerts.</p>
-      
+
       <div className="space-y-4">
         {[
           { key: 'email', label: 'Email Notifications', desc: 'Receive updates via email' },
@@ -169,7 +224,7 @@ const Settings = () => {
                 ${notifications[item.key] ? 'bg-cyan-500' : 'bg-slate-600'}`}
             >
               <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all
-                ${notifications[item.key] ? 'left-7' : 'left-1'}`} 
+                ${notifications[item.key] ? 'left-7' : 'left-1'}`}
               />
             </button>
           </div>
@@ -183,7 +238,7 @@ const Settings = () => {
       <p className={`${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
         Customize the appearance of your workspace. Changes are applied immediately and saved automatically.
       </p>
-      
+
       <div>
         <label className={`block text-sm font-medium mb-3 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
           Theme
@@ -201,8 +256,8 @@ const Settings = () => {
                 key={t.id}
                 onClick={() => setTheme(t.id)}
                 className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 relative
-                  ${isActive 
-                    ? `border-[var(--accent-primary)] bg-[var(--accent-primary)]/10` 
+                  ${isActive
+                    ? `border-[var(--accent-primary)] bg-[var(--accent-primary)]/10`
                     : `${isDark ? 'bg-white/5 border-white/10 hover:border-white/30' : 'bg-slate-100 border-slate-200 hover:border-slate-400'}`
                   }`}
               >
@@ -273,7 +328,7 @@ const Settings = () => {
   const renderSystemSettings = () => (
     <div className="space-y-6">
       <p className={`${isDark ? 'text-slate-400' : 'text-slate-600'}`}>System configuration and data management.</p>
-      
+
       <div className="space-y-4">
         <div className={`p-4 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200'}`}>
           <div className="flex items-center justify-between">
@@ -386,19 +441,39 @@ const Settings = () => {
           {activeTab === 'appearance' && renderAppearanceSettings()}
           {activeTab === 'system' && renderSystemSettings()}
 
-          <div className={`flex justify-end gap-3 mt-8 pt-6 border-t ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
-            <button className={`px-4 py-2 rounded-lg transition-colors ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-800'}`}>
-              Cancel
-            </button>
-            <button className="flex items-center gap-2 px-6 py-2 rounded-lg font-medium
-              bg-gradient-to-r from-cyan-500 to-blue-500 text-white
-              hover:from-cyan-400 hover:to-blue-400 transition-all">
-              <Save className="w-4 h-4" />
-              Save Changes
-            </button>
-          </div>
+          {/* Profile Edit Footer */}
+          {activeTab === 'profile' && isProfileEditing && (
+            <div className={`flex justify-end gap-3 mt-8 pt-6 border-t ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
+              <button
+                onClick={() => setIsProfileEditing(false)}
+                className={`px-4 py-2 rounded-lg transition-colors ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-800'}`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveProfile}
+                className="flex items-center gap-2 px-6 py-2 rounded-lg font-medium
+                  bg-gradient-to-r from-cyan-500 to-blue-500 text-white
+                  hover:from-cyan-400 hover:to-blue-400 transition-all"
+              >
+                <Save className="w-4 h-4" />
+                Save Changes
+              </button>
+            </div>
+          )}
         </GlassCard>
       </div>
+
+      {/* Success Message Toast */}
+      {showSuccessMessage && (
+        <div className="fixed bottom-6 right-6 z-50 animate-fadeIn">
+          <div className={`flex items-center gap-3 px-6 py-4 rounded-xl shadow-lg
+            ${isDark ? 'bg-emerald-600/90' : 'bg-emerald-500'} text-white`}>
+            <CheckCircle className="w-5 h-5" />
+            <span className="font-medium">Profile saved successfully!</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
