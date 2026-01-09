@@ -185,13 +185,12 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
           <table className="w-full">
             <thead>
               <tr className={`border-b ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
-                <th className={`text-left p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Patient</th>
-                <th className={`text-left p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>NRIC</th>
-                <th className={`text-left p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Status</th>
-                <th className={`text-left p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Diagnoses</th>
-                <th className={`text-left p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Next Review (TCA)</th>
-                <th className={`text-left p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Risk</th>
-                <th className={`text-right p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Actions</th>
+                <th className={`text-center p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Patient</th>
+                <th className={`text-center p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Status</th>
+                <th className={`text-center p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Diagnoses</th>
+                <th className={`text-center p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Next Review (TCA)</th>
+                <th className={`text-center p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Risk</th>
+                <th className={`text-center p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -210,16 +209,10 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br ${getAvatarColor(patient.name)} text-white font-bold text-sm`}>
                           {getInitials(patient.name)}
                         </div>
-                        <div>
-                          <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{patient.name}</p>
-                          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{patient.age} y/o • {patient.gender}</p>
-                        </div>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{patient.name}</p>
                       </div>
                     </td>
-                    <td className="p-4">
-                      <span className={`text-sm font-mono ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{patient.nsn}</span>
-                    </td>
-                    <td className="p-4">
+                    <td className="p-4 text-center">
                       {getStatusBadge(patient.status)}
                     </td>
                     <td className="p-4">
@@ -231,9 +224,9 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                         ))}
                       </div>
                     </td>
-                    <td className="p-4">
+                    <td className="p-4 text-center">
                       {patient.nextReview ? (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-center gap-2">
                           <Calendar className={`w-4 h-4 ${accent.text}`} />
                           <div>
                             <p className={`text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>{patient.nextReview}</p>
@@ -246,10 +239,10 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                         <span className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>—</span>
                       )}
                     </td>
-                    <td className="p-4">
+                    <td className="p-4 text-center">
                       {getRiskBadge(patient.riskLevel)}
                     </td>
-                    <td className="p-4 text-right">
+                    <td className="p-4 text-center">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -267,7 +260,7 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                   {/* Expandable Detail Row */}
                   {selectedPatient?.id === patient.id && (
                     <tr>
-                      <td colSpan="7" className={`p-0 ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+                      <td colSpan="6" className={`p-0 ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
                         <div className="p-6">
                           <div className="flex items-start justify-between mb-6">
                             <div className="flex items-center gap-4">
@@ -364,8 +357,8 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                               }}
                               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all
                                 ${isDark
-                                  ? 'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 border border-purple-500/30'
-                                  : 'bg-purple-100 text-purple-700 hover:bg-purple-200 border border-purple-200'}`}
+                                  ? `${accent.lightBgDark} ${accent.text} ${accent.lightBgDarkHover} border ${accent.lightBorderDark}`
+                                  : `${accent.lightBg} ${accent.textLight} ${accent.lightBgHover} border ${accent.lightBorder}`}`}
                             >
                               <History className="w-4 h-4" />
                               Medical History

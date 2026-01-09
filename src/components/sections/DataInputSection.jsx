@@ -488,13 +488,20 @@ export function DataInputSection({ onViewChart }) {
   const { state, dispatch, syncMPIS, analyzeAssessment } = useApp();
   const { isDark } = useTheme();
   const { isAnalyzing, clinicalNotes, mpisData, patient, mpisSynced } = state;
-  const [nsn, setNsn] = React.useState('');
+  const [nsn, setNsn] = React.useState(patient?.nsn || '');
   const [nricError, setNricError] = React.useState('');
   const [mpisLoading, setMpisLoading] = React.useState(false);
   const [mpisChecked, setMpisChecked] = React.useState(false);
   const [mpisFound, setMpisFound] = React.useState(false);
   const [isChartModalOpen, setIsChartModalOpen] = React.useState(false);
   const [notesConfirmed, setNotesConfirmed] = React.useState(false);
+
+  // Auto-populate NRIC when navigating from Home page's Start Consult
+  React.useEffect(() => {
+    if (patient?.nsn && !nsn && !mpisChecked) {
+      setNsn(patient.nsn);
+    }
+  }, [patient?.nsn]);
 
   // NRIC format validation: xxxxxx-xx-xxxx (6 digits - 2 digits - 4 digits)
   const validateNRIC = (nric) => {

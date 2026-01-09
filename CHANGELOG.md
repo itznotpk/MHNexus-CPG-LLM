@@ -1,5 +1,23 @@
 ## Changelog
 
+### 2026-01-09 (Session 2)
+
+#### My Patients Tab Improvements
+- **Medical History Button Theming**: The "Medical History" button now follows the accent color selected in Settings, displayed as a solid light version of the chosen accent color.
+- **Simplified Patient Table**: Removed age, gender, and NRIC columns from the main table view for a cleaner display. These details are still shown when expanding a patient row.
+- **Center-Aligned Table**: All column headers are now center-aligned. Status, Next Review, Risk, and Actions columns content are also center-aligned for better visual consistency.
+- **NRIC Font Consistency**: NRIC now uses the same font style as other table content (removed monospace font).
+
+#### Profile & Settings Enhancements
+- **Synchronized Profile Avatar**: Profile picture in Settings now matches the sidebar profile - uses the same initials and accent color gradient.
+
+#### Consultation Workflow Improvements
+- **Auto-Fill NRIC from Home Page**: When clicking "Start Consult" for a patient on the Home page, the NRIC is now automatically pre-filled in the Consultation tab's search field.
+- **Clean State for Manual Consultation**: When manually navigating to Consultation via sidebar, the NRIC field starts blank for a fresh consultation.
+
+#### Theme System Enhancements
+- **Extended Accent Color Properties**: Added light background variants (`lightBg`, `lightBgHover`, `lightBgDark`, `lightBgDarkHover`, `lightBorder`, `lightBorderDark`, `textLight`) to all accent colors for more styling flexibility.
+
 ### 2026-01-09
 
 #### Patient Management & UI Enhancements

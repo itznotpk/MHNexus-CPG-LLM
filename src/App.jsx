@@ -42,11 +42,18 @@ function AppContent() {
   });
 
   const handleNavigate = (view) => {
+    // Reset state when manually navigating to consultation (not via Start Consult)
+    if (view === 'consultation') {
+      dispatch({ type: 'RESET' });
+    }
     setCurrentView(view);
   };
 
   const handleStartConsult = (patient, triage) => {
-    // Pre-fill patient data and navigate to consultation
+    // Reset to step 1 first (clears previous patient data)
+    dispatch({ type: 'RESET' });
+
+    // Then pre-fill patient data
     dispatch({
       type: 'SET_PATIENT',
       payload: {
@@ -85,8 +92,7 @@ function AppContent() {
       });
     }
 
-    // Reset to step 1 and navigate to consultation
-    dispatch({ type: 'RESET' });
+    // Navigate to consultation
     setCurrentView('consultation');
   };
 

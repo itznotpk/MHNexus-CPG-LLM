@@ -24,7 +24,7 @@ import { GlassCard } from '../shared/GlassCard';
 import { useTheme, accentColors } from '../../context/ThemeContext';
 
 const Settings = ({ profile, setProfile }) => {
-  const { theme, setTheme, accentColor, setAccentColor, effectiveTheme, isDark } = useTheme();
+  const { theme, setTheme, accentColor, setAccentColor, effectiveTheme, isDark, accent } = useTheme();
   const [activeTab, setActiveTab] = useState('profile');
   const [notifications, setNotifications] = useState({
     email: true,
@@ -49,13 +49,23 @@ const Settings = ({ profile, setProfile }) => {
     { id: 'system', label: 'System', icon: Database }
   ];
 
+  // Get initials from name
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return parts[0][0] + parts[1][0];
+    }
+    return name[0];
+  };
+
   const renderProfileSettings = () => (
     <div className="space-y-6">
       <div className="flex items-start gap-6">
         <div className="relative">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 
-            flex items-center justify-center text-white text-2xl font-bold">
-            T
+          <div className={`w-24 h-24 rounded-full bg-gradient-to-br ${accent.gradient} 
+            flex items-center justify-center text-white text-2xl font-bold`}>
+            {getInitials(profile?.name)}
           </div>
           {isProfileEditing && (
             <button className={`absolute bottom-0 right-0 w-8 h-8 rounded-full 

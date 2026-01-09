@@ -12,9 +12,10 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application built wit
 ## 🌟 Features
 
 **Latest Update (2026-01-09):**
-- **Enhanced Patient Management**: colorful avatars, inline detail expansion in "My Patients", and restructured "Home" schedule.
-- **Advanced Clinical Features**: NRIC validation, "View Chart" consultation modal, and a comprehensive Medical History system.
-- **Workflow improvements**: Clinical notes confirmation step and dynamic doctor profile synchronization in the sidebar.
+- **Streamlined My Patients Table**: Simplified view with centered column alignment, dynamic accent-colored buttons, and expandable patient details.
+- **Auto-Fill NRIC Workflow**: Clicking "Start Consult" from Home page now auto-populates the patient's NRIC in the Consultation tab.
+- **Unified Profile Avatars**: Settings profile picture now syncs with sidebar, using the same initials and accent color gradient.
+- **Enhanced Theme System**: Extended accent color properties for more flexible light/dark mode styling.
 - See [CHANGELOG.md](CHANGELOG.md) for details.
 
 ### 🏠 Sidebar Navigation & Dashboard
@@ -327,5 +328,5 @@ Proprietary - MHNexus Healthcare Solutions
 
 For a full list of changes, see [CHANGELOG.md](CHANGELOG.md).
 
-**Version**: 1.2.1 (UI/UX Workflow Simplification, Jan 2026)
-**Last Updated**: January 2026
+**Version**: 1.2.2 (My Patients & Consultation Workflow Improvements, Jan 2026)
+**Last Updated**: January 9, 2026
