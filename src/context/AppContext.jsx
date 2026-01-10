@@ -8,6 +8,11 @@ import {
   sampleCarePlan,
   mpisPatientDatabase,
 } from '../data/sampleData';
+import { searchPatientByNRIC, isSupabaseConfigured } from '../lib/supabase';
+
+// Toggle this to switch between Supabase and mock data
+// Set to true once you've deployed the schema to Supabase
+const USE_SUPABASE = isSupabaseConfigured();
 
 const AppContext = createContext();
 
@@ -126,7 +131,38 @@ export function AppProvider({ children }) {
     dispatch({ type: 'LOAD_DEMO_DATA' });
   };
 
-  const syncMPIS = (nsn) => {
+  const syncMPIS = async (nsn) => {
+    // Try Supabase first if configured
+    if (USE_SUPABASE) {
+      console.log('🔍 Searching Supabase for NRIC:', nsn);
+      const result = await searchPatientByNRIC(nsn);
+
+      if (result.error) {
+        console.warn('Supabase error, falling back to mock data:', result.error);
+        // Fall through to mock data
+      } else if (result.found) {
+        console.log('✅ Patient found in Supabase:', result.patient.name);
+        const patient = result.patient;
+        dispatch({ type: 'SET_PATIENT', payload: patient });
+        dispatch({
+          type: 'SET_MPIS_DATA', payload: {
+            race: patient.race,
+            ethnicity: patient.ethnicity,
+            allergies: patient.allergies,
+            comorbidities: patient.comorbidities,
+            currentMeds: patient.currentMeds,
+          }
+        });
+        return { found: true, patient: patient, mpisData: patient };
+      } else {
+        console.log('❌ Patient not found in Supabase');
+        dispatch({ type: 'SET_PATIENT', payload: { nsn: nsn } });
+        return { found: false, nsn: nsn };
+      }
+    }
+
+    // Fallback to mock data
+    console.log('📦 Using mock data for NRIC:', nsn);
     return new Promise((resolve) => {
       setTimeout(() => {
         // Lookup patient by NRIC in the mock database

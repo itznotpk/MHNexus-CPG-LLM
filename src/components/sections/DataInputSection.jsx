@@ -301,17 +301,127 @@ function PatientInfoCard({ patient, mpisData, onClear, onViewChart }) {
 }
 
 // New Patient Registration Form
-function NewPatientForm({ nsn, onClear }) {
+function NewPatientForm({ nsn, onClear, onPatientRegistered }) {
   const { isDark } = useTheme();
   const { state, dispatch } = useApp();
   const { patient, mpisData } = state;
+  const [isRegistering, setIsRegistering] = React.useState(false);
+  const [registrationError, setRegistrationError] = React.useState('');
+  const [registrationSuccess, setRegistrationSuccess] = React.useState(false);
+
+  // Parse Malaysian NRIC to extract DOB and Gender
+  // Format: YYMMDD-PB-#### (e.g., 040911-07-0517)
+  // - First 6 digits: YYMMDD (date of birth)
+  // - Next 2 digits: PB (place of birth code)
+  // - Last 4 digits: #### (last digit: odd = male, even = female)
+  const parseNRIC = (nric) => {
+    if (!nric || nric.length < 14) return null;
+
+    const cleanNric = nric.replace(/-/g, '');
+    if (cleanNric.length !== 12) return null;
+
+    // Extract date components
+    const yy = cleanNric.substring(0, 2);
+    const mm = cleanNric.substring(2, 4);
+    const dd = cleanNric.substring(4, 6);
+
+    // Determine century: if YY > current year's last 2 digits, it's 1900s, else 2000s
+    const currentYear = new Date().getFullYear();
+    const currentYY = currentYear % 100;
+    const century = parseInt(yy) > currentYY ? '19' : '20';
+    const fullYear = century + yy;
+
+    // Format DOB as YYYY-MM-DD for date input
+    const dob = `${fullYear}-${mm}-${dd}`;
+
+    // Calculate age
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    // Determine gender from last digit (odd = male, even = female)
+    const lastDigit = parseInt(cleanNric.charAt(11));
+    const gender = lastDigit % 2 === 1 ? 'Male' : 'Female';
+
+    return { dob, age, gender };
+  };
+
+  // Auto-fill on mount if we have a valid NRIC
+  React.useEffect(() => {
+    if (nsn && !patient?.dob) {
+      const parsed = parseNRIC(nsn);
+      if (parsed) {
+        dispatch({
+          type: 'SET_PATIENT', payload: {
+            nsn: nsn,
+            dob: parsed.dob,
+            age: parsed.age,
+            gender: parsed.gender,
+          }
+        });
+      }
+    }
+  }, [nsn]);
 
   const handlePatientChange = (field, value) => {
     dispatch({ type: 'SET_PATIENT', payload: { [field]: value } });
+    setRegistrationError('');
+    setRegistrationSuccess(false);
   };
 
   const handleMpisChange = (field, value) => {
     dispatch({ type: 'SET_MPIS_DATA', payload: { ...mpisData, [field]: value } });
+    setRegistrationError('');
+    setRegistrationSuccess(false);
+  };
+
+  // Check if required fields are filled
+  const canRegister = patient?.name && patient?.dob && patient?.gender;
+
+  // Handle patient registration to Supabase
+  const handleRegisterPatient = async () => {
+    if (!canRegister) {
+      setRegistrationError('Please fill in all required fields (Name, DOB, Gender)');
+      return;
+    }
+
+    setIsRegistering(true);
+    setRegistrationError('');
+
+    try {
+      // Import the register function
+      const { registerPatient } = await import('../../lib/supabase');
+
+      const result = await registerPatient({
+        nric: patient.nsn || nsn,
+        fullName: patient.name,
+        dateOfBirth: patient.dob,
+        gender: patient.gender,
+        race: mpisData?.race || null,
+        ethnicity: mpisData?.ethnicity || null,
+        allergies: mpisData?.allergies || null,
+        comorbidities: mpisData?.comorbidities || null,
+      });
+
+      if (result.error) {
+        setRegistrationError(result.error.message || 'Failed to register patient');
+      } else {
+        setRegistrationSuccess(true);
+        console.log('✅ Patient registered successfully:', result.patientId);
+        if (onPatientRegistered) {
+          onPatientRegistered(result.patientId);
+        }
+      }
+    } catch (err) {
+      console.error('Registration error:', err);
+      setRegistrationError(err.message || 'Failed to register patient');
+    } finally {
+      setIsRegistering(false);
+    }
   };
 
   return (
@@ -335,11 +445,34 @@ function NewPatientForm({ nsn, onClear }) {
         </Button>
       </div>
 
+      {/* Success Message */}
+      {registrationSuccess && (
+        <div className="mb-4 p-3 rounded-lg bg-green-500/20 border border-green-500/30 flex items-center gap-2">
+          <CheckCircle className="w-5 h-5 text-green-500" />
+          <span className={`text-sm font-medium ${isDark ? 'text-green-400' : 'text-green-700'}`}>
+            Patient registered successfully! You can now proceed with the clinical assessment.
+          </span>
+        </div>
+      )}
+
+      {/* Error Message */}
+      {registrationError && (
+        <div className="mb-4 p-3 rounded-lg bg-red-500/20 border border-red-500/30 flex items-center gap-2">
+          <AlertCircle className="w-5 h-5 text-red-500" />
+          <span className={`text-sm font-medium ${isDark ? 'text-red-400' : 'text-red-700'}`}>
+            {registrationError}
+          </span>
+        </div>
+      )}
+
       {/* Patient Demographics */}
       <div className="space-y-4">
         <div>
           <h4 className={`text-sm font-semibold mb-3 ${isDark ? 'text-white' : 'text-slate-800'}`}>
             Patient Demographics
+            <span className={`ml-2 text-xs font-normal ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              (Auto-filled from NRIC)
+            </span>
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
@@ -359,7 +492,7 @@ function NewPatientForm({ nsn, onClear }) {
             </div>
             <div>
               <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                Date of Birth *
+                Date of Birth * <span className="text-emerald-500">(from NRIC)</span>
               </label>
               <input
                 type="date"
@@ -373,7 +506,7 @@ function NewPatientForm({ nsn, onClear }) {
             </div>
             <div>
               <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                Age
+                Age <span className="text-emerald-500">(calculated)</span>
               </label>
               <input
                 type="number"
@@ -383,12 +516,12 @@ function NewPatientForm({ nsn, onClear }) {
                   } focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]`}
                 placeholder="Age"
                 value={patient?.age || ''}
-                onChange={e => handlePatientChange('age', e.target.value)}
+                readOnly
               />
             </div>
             <div>
               <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                Gender *
+                Gender * <span className="text-emerald-500">(from NRIC)</span>
               </label>
               <select
                 className={`w-full px-3 py-2 rounded-lg border ${isDark
@@ -478,6 +611,26 @@ function NewPatientForm({ nsn, onClear }) {
               />
             </div>
           </div>
+        </div>
+
+        {/* Register Button */}
+        <div className="pt-4 border-t border-amber-500/20">
+          <Button
+            variant={registrationSuccess ? 'success' : 'primary'}
+            size="lg"
+            icon={registrationSuccess ? CheckCircle : Database}
+            onClick={handleRegisterPatient}
+            loading={isRegistering}
+            disabled={!canRegister || isRegistering || registrationSuccess}
+            className="w-full sm:w-auto"
+          >
+            {registrationSuccess ? 'Patient Registered' : isRegistering ? 'Registering...' : 'Register Patient to Database'}
+          </Button>
+          {!canRegister && (
+            <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Please fill in Full Name, Date of Birth, and Gender to register.
+            </p>
+          )}
         </div>
       </div>
     </GlassCard>
