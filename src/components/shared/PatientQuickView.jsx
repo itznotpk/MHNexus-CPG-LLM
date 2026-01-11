@@ -14,7 +14,6 @@ import {
   BarChart2
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
-import { mpisPatientDatabase } from '../../data/sampleData';
 
 const PatientQuickView = ({ patient, triage, isOpen, onClose, onExportPDF, onExportCSV, onViewChart }) => {
   const { isDark, accent } = useTheme();
@@ -35,9 +34,8 @@ const PatientQuickView = ({ patient, triage, isOpen, onClose, onExportPDF, onExp
       exportDate: new Date().toISOString()
     };
 
-    // Get historical vitals from MPIS if available
-    const mpisRecord = patient.nsn ? mpisPatientDatabase[patient.nsn] : null;
-    const vitalsHistory = mpisRecord?.mpisData?.vitalsHistory || [];
+    // Get historical vitals from patient object (Supabase) if available
+    const vitalsHistory = patient.vitalsHistory || [];
 
     // Build vitals history section for PDF
     let vitalsHistoryText = '';
@@ -47,8 +45,9 @@ const PatientQuickView = ({ patient, triage, isOpen, onClose, onExportPDF, onExp
 VITALS HISTORY (Last ${vitalsHistory.length} readings)
 ----------------------------------------`;
       vitalsHistory.forEach(v => {
+        const item = typeof v === 'string' ? JSON.parse(v) : v;
         vitalsHistoryText += `
-${v.date}: BP ${v.bpSystolic}/${v.bpDiastolic} | HR ${v.hr} | SpO2 ${v.spo2}% | Weight ${v.weight}kg`;
+${item.date}: BP ${item.bpSystolic}/${item.bpDiastolic} | HR ${item.hr} | SpO2 ${item.spo2}% | Weight ${item.weight}kg`;
       });
     }
 

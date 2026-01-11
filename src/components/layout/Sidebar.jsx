@@ -41,8 +41,8 @@ const Sidebar = ({ currentView, onNavigate, isCollapsed, onToggleCollapse, profi
       {/* Logo Section */}
       <div className={`p-4 flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} ${isDark ? 'border-b border-white/10' : 'border-b border-slate-200'}`}>
         <img
-          src="/Image/MHNexus.png"
-          alt="CPG LLM Logo"
+          src="/MHNexus.png"
+          alt="MHNexus Logo"
           className="w-14 h-14 object-contain flex-shrink-0"
         />
         {!isCollapsed && (

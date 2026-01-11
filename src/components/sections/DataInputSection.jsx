@@ -6,7 +6,6 @@ import { Button, Skeleton, SkeletonDiagnosis, GlassCard, Badge } from '../shared
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
 import { VitalsLineChart } from '../shared/VitalsLineChart';
-import { mpisPatientDatabase } from '../../data/sampleData';
 
 // Analyzing Skeleton Component
 function AnalyzingSkeleton() {
@@ -93,6 +92,11 @@ const vitalsTabs = [
       { key: 'weight', label: 'Weight', unit: 'kg', color: '#10b981' },
     ]
   },
+  {
+    id: 'temperature', label: 'Temperature', icon: Thermometer, metrics: [
+      { key: 'temp', label: 'Temperature', unit: '°C', color: '#f59e0b' },
+    ]
+  },
 ];
 
 // Chart Modal Component
@@ -102,8 +106,35 @@ function ChartModal({ patient, isOpen, onClose }) {
 
   if (!isOpen || !patient) return null;
 
-  const mpisRecord = patient.nsn ? mpisPatientDatabase[patient.nsn] : null;
-  const vitalsData = mpisRecord?.mpisData?.vitalsHistory || [];
+  // Use vitals history from patient object (Supabase only)
+  const rawHistory = patient.vitalsHistory || [];
+
+  // Normalize all entries to objects
+  let history = rawHistory.map(d => {
+    try {
+      return typeof d === 'string' ? JSON.parse(d) : d;
+    } catch (e) {
+      return d;
+    }
+  });
+
+  // Make it ALIGNED and DYNAMIC: Add the currently entered vitals as the latest point
+  const { vitals } = useApp().state;
+  if (vitals.bpSystolic || vitals.hr) {
+    const currentEntry = {
+      date: 'Current',
+      bpSystolic: parseInt(vitals.bpSystolic) || 0,
+      bpDiastolic: parseInt(vitals.bpDiastolic) || 0,
+      hr: parseInt(vitals.hr) || 0,
+      temp: parseFloat(vitals.temp) || 0,
+      spo2: parseInt(vitals.spo2) || 0,
+      weight: parseFloat(vitals.weight) || 0,
+    };
+
+    history = [...history, currentEntry];
+  }
+
+  const vitalsData = history;
   const currentTabConfig = vitalsTabs.find(t => t.id === activeTab);
 
   return (
@@ -412,6 +443,7 @@ function NewPatientForm({ nsn, onClear, onPatientRegistered }) {
       } else {
         setRegistrationSuccess(true);
         console.log('✅ Patient registered successfully:', result.patientId);
+        // Important: Update parent state that patient is now in DB
         if (onPatientRegistered) {
           onPatientRegistered(result.patientId);
         }
@@ -638,7 +670,7 @@ function NewPatientForm({ nsn, onClear, onPatientRegistered }) {
 }
 
 export function DataInputSection({ onViewChart }) {
-  const { state, dispatch, syncMPIS, analyzeAssessment } = useApp();
+  const { state, dispatch, syncMPIS, analyzeAssessment, saveVitalsToDB } = useApp();
   const { isDark } = useTheme();
   const { isAnalyzing, clinicalNotes, mpisData, patient, mpisSynced } = state;
   const [nsn, setNsn] = React.useState(patient?.nsn || '');
@@ -675,7 +707,12 @@ export function DataInputSection({ onViewChart }) {
 
   const canAnalyze = clinicalNotes.trim().length > 0 && mpisChecked && notesConfirmed;
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
+    // Save vitals to history before proceeding
+    // We only save if the patient was found (has a record in DB)
+    if (mpisFound) {
+      await saveVitalsToDB();
+    }
     analyzeAssessment();
   };
 
@@ -815,6 +852,7 @@ export function DataInputSection({ onViewChart }) {
           <NewPatientForm
             nsn={patient?.nsn || nsn}
             onClear={handleClear}
+            onPatientRegistered={() => setMpisFound(true)}
           />
         )
       )}

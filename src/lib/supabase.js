@@ -111,9 +111,9 @@ export const onAuthStateChange = (callback) => {
  */
 export const searchPatientByNRIC = async (nric) => {
   try {
-    // Call the database function we created
+    // Call the NEW database function v2
     const { data, error } = await supabase
-      .rpc('search_patient_by_nric', { p_nric: nric });
+      .rpc('search_patient_v2', { p_nric: nric });
 
     if (error) {
       console.error('Error searching patient:', error);
@@ -137,6 +137,7 @@ export const searchPatientByNRIC = async (nric) => {
           currentMeds: patient.current_medications || [],
           riskLevel: patient.risk_level,
           mpisSyncedAt: patient.mpis_synced_at,
+          vitalsHistory: patient.vitals_history || [],
         },
         error: null
       };
@@ -211,6 +212,32 @@ export const updatePatientFromMPIS = async (nric, mpisData) => {
 };
 
 /**
+ * Save new vital signs reading for a patient
+ * @param {string} nric - Patient's NRIC
+ * @param {Object} vitals - Vital signs data
+ * @returns {Promise<{success: boolean, history: Array|null, error: Error|null}>}
+ */
+export const savePatientVitals = async (nric, vitals) => {
+  try {
+    const { data, error } = await supabase
+      .rpc('push_patient_vitals', {
+        p_nric: nric,
+        p_vitals: [vitals] // Pass array directly, Supabase will handle JSONB conversion
+      });
+
+    if (error) {
+      console.error('Error saving patient vitals:', error);
+      return { success: false, history: null, error };
+    }
+
+    return { success: true, history: data, error: null };
+  } catch (err) {
+    console.error('Exception saving patient vitals:', err);
+    return { success: false, history: null, error: err };
+  }
+};
+
+/**
  * Get all patients (for My Patients page)
  * @param {Object} options - Query options
  * @returns {Promise<{patients: Array, error: Error|null}>}
@@ -270,6 +297,7 @@ export const getAllPatients = async (options = {}) => {
       tcaDays: null, // Not in DB yet
       phone: null, // Removed from schema
       email: null, // Removed from schema
+      vitalsHistory: p.vitals_history || [],
     }));
 
     return { patients, error: null };

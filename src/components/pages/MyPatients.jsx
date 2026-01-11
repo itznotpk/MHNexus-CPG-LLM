@@ -23,7 +23,6 @@ import {
   AlertTriangle,
   Loader2
 } from 'lucide-react';
-import { patientRegistry } from '../../data/scheduleData';
 import { GlassCard } from '../shared/GlassCard';
 import { useTheme } from '../../context/ThemeContext';
 import { getAllPatients } from '../../lib/supabase';
@@ -32,82 +31,62 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
   const { isDark, accent } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // all, active, discharged, follow-up
-  const [patients, setPatients] = useState(patientRegistry); // Start with local data
-  const [allPatients, setAllPatients] = useState(patientRegistry); // Keep all patients for counts
+  const [patients, setPatients] = useState([]); // Only database patients
+  const [allPatients, setAllPatients] = useState([]); // Keep all patients for counts
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [useLocalData, setUseLocalData] = useState(false); // Track if using local fallback
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [showMedicalHistory, setShowMedicalHistory] = useState(false);
   const [historyPatient, setHistoryPatient] = useState(null);
 
-  // Fetch patients from Supabase
+  // Fetch patients from Supabase only
   const fetchPatients = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      // Try to get patients from Supabase
+      // Get patients from Supabase only
       const { patients: supabasePatients, error: supabaseError } = await getAllPatients({});
-      
+
       console.log('Supabase fetch result:', { supabasePatients, supabaseError }); // Debug log
-      
-      // Combine local mock data with Supabase data
-      // Use local data as base, then add/merge Supabase data
-      let combinedPatients = [...patientRegistry]; // Start with local mock data
-      
-      if (!supabaseError && supabasePatients.length > 0) {
-        // Add Supabase patients that don't exist in local data (by NRIC/nsn)
-        const localNrics = new Set(patientRegistry.map(p => p.nsn));
-        const newFromSupabase = supabasePatients.filter(p => !localNrics.has(p.nsn));
-        combinedPatients = [...patientRegistry, ...newFromSupabase];
-        console.log('Combined patients (local + Supabase):', combinedPatients.length);
-      } else {
-        console.log('Using only local mock data');
+
+      if (supabaseError) {
+        setError('Failed to load patients from database');
+        setAllPatients([]);
+        setPatients([]);
+        setLoading(false);
+        return;
       }
-      
-      setAllPatients(combinedPatients);
-      
+
+      setAllPatients(supabasePatients);
+
       // Apply search/status filters
-      let filtered = combinedPatients;
+      let filtered = supabasePatients;
       if (searchTerm) {
         // Normalize search term (remove dashes for NRIC matching)
         const normalizedSearch = searchTerm.toLowerCase().replace(/-/g, '');
-        filtered = filtered.filter(p => 
-          p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.nsn.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.nsn.replace(/-/g, '').includes(normalizedSearch) // Match NRIC without dashes
-        );
+        filtered = filtered.filter(p => {
+          const name = (p.name || '').toLowerCase();
+          const nsn = (p.nsn || '').toLowerCase();
+          return name.includes(searchTerm.toLowerCase()) ||
+            nsn.includes(searchTerm.toLowerCase()) ||
+            nsn.replace(/-/g, '').includes(normalizedSearch);
+        });
       }
       if (statusFilter !== 'all') {
         filtered = filtered.filter(p => p.status === statusFilter);
       }
-      
+
       setPatients(filtered);
-      
+
     } catch (err) {
       console.error('Exception fetching patients:', err);
-      // Fall back to local data only
-      setAllPatients(patientRegistry);
-      
-      // Filter local data
-      let filtered = patientRegistry;
-      if (searchTerm) {
-        // Normalize search term (remove dashes for NRIC matching)
-        const normalizedSearch = searchTerm.toLowerCase().replace(/-/g, '');
-        filtered = filtered.filter(p => 
-          p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.nsn.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.nsn.replace(/-/g, '').includes(normalizedSearch) // Match NRIC without dashes
-        );
-      }
-      if (statusFilter !== 'all') {
-        filtered = filtered.filter(p => p.status === statusFilter);
-      }
-      setPatients(filtered);
-    } finally {
-      setLoading(false);
+      setError('Failed to load patients');
+      setAllPatients([]);
+      setPatients([]);
     }
+
+    setLoading(false);
   }, [searchTerm, statusFilter]);
 
   // Initial load and when filters change
@@ -165,7 +144,7 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
       discharged: { bg: 'bg-slate-500/20', text: isDark ? 'text-slate-300' : 'text-slate-600', border: 'border-slate-500/30', icon: XCircle, label: 'Discharged' },
       'follow-up': { bg: 'bg-amber-500/20', text: 'text-amber-500', border: 'border-amber-500/30', icon: RotateCcw, label: 'Follow-up Required' }
     };
-    const cfg = config[status];
+    const cfg = config[status] || config['active']; // Default to active if status is unknown
     const Icon = cfg.icon;
     return (
       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
@@ -182,10 +161,11 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
       high: { bg: 'bg-orange-500/20', text: 'text-orange-500' },
       critical: { bg: 'bg-red-500/20', text: 'text-red-600 font-bold' }
     };
-    const cfg = config[level];
+    const cfg = config[level] || config['low']; // Default to low if level is unknown
+    const displayLevel = level || 'low';
     return (
       <span className={`px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${cfg.bg} ${cfg.text}`}>
-        {level.charAt(0).toUpperCase() + level.slice(1)} Risk
+        {displayLevel.charAt(0).toUpperCase() + displayLevel.slice(1)} Risk
       </span>
     );
   };
@@ -267,12 +247,12 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
           <table className="w-full">
             <thead>
               <tr className={`border-b ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
+                <th className="w-12 p-4"></th>
                 <th className={`text-center p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Patient</th>
                 <th className={`text-center p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Status</th>
                 <th className={`text-center p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Diagnoses</th>
                 <th className={`text-center p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Next Review (TCA)</th>
                 <th className={`text-center p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Risk</th>
-                <th className={`text-center p-4 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -324,19 +304,30 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
               {!loading && !error && filteredPatients.map((patient) => (
                 <React.Fragment key={patient.id}>
                   <tr
-                    className={`border-b transition-colors cursor-pointer
+                    className={`border-b transition-colors
                       ${selectedPatient?.id === patient.id
                         ? isDark ? 'bg-[var(--accent-primary)]/10' : 'bg-[var(--accent-primary)]/5'
                         : isDark ? 'border-white/5 hover:bg-white/5' : 'border-slate-100 hover:bg-slate-50'
                       }`}
-                    onClick={() => setSelectedPatient(selectedPatient?.id === patient.id ? null : patient)}
                   >
+                    {/* Dropdown Toggle Button */}
+                    <td className="p-4 w-12">
+                      <button
+                        onClick={() => setSelectedPatient(selectedPatient?.id === patient.id ? null : patient)}
+                        className={`p-2 rounded-lg transition-all ${isDark ? 'hover:bg-white/10' : 'hover:bg-slate-200'}`}
+                      >
+                        <ChevronRight
+                          className={`w-5 h-5 transition-transform duration-200 ${isDark ? 'text-slate-400' : 'text-slate-500'}
+                            ${selectedPatient?.id === patient.id ? 'rotate-90' : ''}`}
+                        />
+                      </button>
+                    </td>
                     <td className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br ${getAvatarColor(patient.name)} text-white font-bold text-sm`}>
-                          {getInitials(patient.name)}
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br ${getAvatarColor(patient.name || '')} text-white font-bold text-sm`}>
+                          {getInitials(patient.name || '')}
                         </div>
-                        <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{patient.name}</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{patient.name || 'Unknown'}</p>
                       </div>
                     </td>
                     <td className="p-4 text-center">
@@ -344,11 +335,15 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                     </td>
                     <td className="p-4">
                       <div className="max-w-[200px]">
-                        {patient.diagnoses.map((dx, i) => (
-                          <p key={i} className={`text-sm ${i > 0 ? 'mt-1' : ''} ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                            • {dx}
-                          </p>
-                        ))}
+                        {patient.diagnoses && patient.diagnoses.length > 0 ? (
+                          patient.diagnoses.map((dx, i) => (
+                            <p key={i} className={`text-sm ${i > 0 ? 'mt-1' : ''} ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                              • {dx}
+                            </p>
+                          ))
+                        ) : (
+                          <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>—</p>
+                        )}
                       </div>
                     </td>
                     <td className="p-4 text-center">
@@ -358,7 +353,7 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                           <div>
                             <p className={`text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>{patient.nextReview}</p>
                             <p className={`text-xs font-medium ${patient.tcaDays <= 3 ? 'text-amber-500' : isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                              TCA: {patient.tcaDays} {patient.tcaDays === 1 ? 'Day' : 'Days'}
+                              TCA: {patient.tcaDays || '—'} {patient.tcaDays === 1 ? 'Day' : 'Days'}
                             </p>
                           </div>
                         </div>
@@ -369,19 +364,6 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                     <td className="p-4 text-center">
                       {getRiskBadge(patient.riskLevel)}
                     </td>
-                    <td className="p-4 text-center">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onViewChart && onViewChart(patient);
-                        }}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all
-                          bg-gradient-to-r ${accent.gradient} text-white hover:opacity-90 shadow-sm`}
-                      >
-                        <FileText className="w-4 h-4" />
-                        View Chart
-                      </button>
-                    </td>
                   </tr>
 
                   {/* Expandable Detail Row */}
@@ -389,116 +371,85 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                     <tr>
                       <td colSpan="6" className={`p-0 ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
                         <div className="p-6">
-                          <div className="flex items-start justify-between mb-6">
-                            <div className="flex items-center gap-4">
-                              <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${getAvatarColor(patient.name)}
-                                flex items-center justify-center text-white text-xl font-bold`}>
-                                {getInitials(patient.name)}
+                          <div className={`p-4 rounded-xl ${isDark ? 'bg-white/5' : 'bg-white'} border ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
+                            <h3 className={`text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                              Patient Details
+                            </h3>
+
+                            {/* Basic Info Grid */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-6">
+                              <div>
+                                <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>Name</p>
+                                <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{patient.name || '—'}</p>
                               </div>
                               <div>
-                                <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>{patient.name}</h2>
-                                <p className={isDark ? 'text-slate-300' : 'text-slate-600'}>
-                                  {patient.age} years old • {patient.gender} • {patient.nsn}
-                                </p>
-                                <div className="flex items-center gap-3 mt-2">
-                                  {getStatusBadge(patient.status)}
-                                  {getRiskBadge(patient.riskLevel)}
-                                </div>
+                                <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>NRIC</p>
+                                <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{patient.nsn || '—'}</p>
                               </div>
-                            </div>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedPatient(null);
-                              }}
-                              className={`${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-800'} transition-colors`}
-                            >
-                              ✕
-                            </button>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {/* Contact Info */}
-                            <div className="space-y-3">
-                              <h3 className={`text-sm font-medium uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Contact</h3>
-                              <div className="space-y-2">
-                                <p className={`flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                                  <Phone className={`w-4 h-4 ${accent.text}`} />
-                                  {patient.phone}
-                                </p>
-                                <p className={`flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                                  <Mail className={`w-4 h-4 ${accent.text}`} />
-                                  {patient.email}
+                              <div>
+                                <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>Age</p>
+                                <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{patient.age || '—'} years</p>
+                              </div>
+                              <div>
+                                <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>Gender</p>
+                                <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{patient.gender || '—'}</p>
+                              </div>
+                              <div>
+                                <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>Race</p>
+                                <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{patient.race || '—'}</p>
+                              </div>
+                              <div>
+                                <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>Ethnicity</p>
+                                <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{patient.ethnicity || '—'}</p>
+                              </div>
+                              <div className="col-span-2">
+                                <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>Allergies</p>
+                                <p className={`font-medium ${patient.allergies ? 'text-red-500' : isDark ? 'text-white' : 'text-slate-800'}`}>
+                                  {patient.allergies
+                                    ? (Array.isArray(patient.allergies) ? patient.allergies.join(', ') : String(patient.allergies))
+                                    : 'None known'}
                                 </p>
                               </div>
                             </div>
 
                             {/* Diagnoses */}
-                            <div className="space-y-3">
-                              <h3 className={`text-sm font-medium uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Diagnoses</h3>
-                              <div className="space-y-2">
-                                {patient.diagnoses.map((dx, i) => (
-                                  <p key={i} className={`text-sm flex items-start gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                                    <span className={`mt-0.5 ${accent.text}`}>•</span>
-                                    {dx}
-                                  </p>
-                                ))}
-                              </div>
+                            <div className={`mb-6 pb-4 border-b ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
+                              <h4 className={`text-sm font-semibold uppercase mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                Diagnoses / Medical History
+                              </h4>
+                              <p className={`text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                                {patient.diagnoses
+                                  ? (Array.isArray(patient.diagnoses) ? patient.diagnoses.join(', ') : String(patient.diagnoses))
+                                  : 'No diagnoses recorded'}
+                              </p>
                             </div>
 
-                            {/* Visit Info */}
-                            <div className="space-y-3">
-                              <h3 className={`text-sm font-medium uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Visit Info</h3>
-                              <div className="space-y-2">
-                                <p className={`flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                                  <Clock className={`w-4 h-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
-                                  Last Visit: {patient.lastVisit}
-                                </p>
-                                {patient.nextReview && (
-                                  <p className={`flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                                    <Calendar className={`w-4 h-4 ${accent.text}`} />
-                                    Next Review: {patient.nextReview}
-                                  </p>
-                                )}
-                              </div>
+                            {/* Vital Signs with View Chart Button */}
+                            <div className="mb-4">
+                              <h4 className={`text-sm font-semibold uppercase mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                Recent Vital Signs
+                              </h4>
+                              <button
+                                onClick={() => onViewChart && onViewChart(patient)}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium
+                                  bg-gradient-to-r ${accent.gradient} text-white transition-all hover:opacity-90`}
+                              >
+                                <FileText className="w-4 h-4" />
+                                View Chart
+                              </button>
                             </div>
-                          </div>
 
-                          <div className={`flex items-center gap-3 mt-6 pt-6 border-t ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onViewChart && onViewChart(patient);
-                              }}
-                              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium
-                                bg-gradient-to-r ${accent.gradient} text-white transition-all`}
-                            >
-                              <FileText className="w-4 h-4" />
-                              View Full Chart
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setHistoryPatient(patient);
-                                setShowMedicalHistory(true);
-                              }}
-                              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all
-                                ${isDark
-                                  ? `${accent.lightBgDark} ${accent.text} ${accent.lightBgDarkHover} border ${accent.lightBorderDark}`
-                                  : `${accent.lightBg} ${accent.textLight} ${accent.lightBgHover} border ${accent.lightBorder}`}`}
-                            >
-                              <History className="w-4 h-4" />
-                              Medical History
-                            </button>
-                            <button
-                              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all
-                                ${isDark
-                                  ? 'bg-white/5 text-white hover:bg-white/10 border border-white/10'
-                                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'}`}
-                            >
-                              <Calendar className="w-4 h-4" />
-                              Schedule Follow-up
-                            </button>
+                            {/* Current Medications */}
+                            <div className="mb-4">
+                              <h4 className={`text-sm font-semibold uppercase mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                Current Medications
+                              </h4>
+                              <p className={`text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                                {patient.currentMeds
+                                  ? (Array.isArray(patient.currentMeds) ? patient.currentMeds.join(', ') : String(patient.currentMeds))
+                                  : 'No medications recorded'}
+                              </p>
+                            </div>
                           </div>
                         </div>
                       </td>

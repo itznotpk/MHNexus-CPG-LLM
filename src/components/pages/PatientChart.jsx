@@ -3,7 +3,7 @@ import { ArrowLeft, User, Heart, Activity, Thermometer, Wind, Scale, Droplets } 
 import { GlassCard, GlassPanel, Button, Badge } from '../shared';
 import { VitalsLineChart } from '../shared/VitalsLineChart';
 import { useTheme } from '../../context/ThemeContext';
-import { mpisPatientDatabase } from '../../data/sampleData';
+import { useApp } from '../../context/AppContext';
 
 // Tab configuration for vital signs
 const vitalsTabs = [
@@ -58,7 +58,6 @@ function PatientChart({ patient, onBack }) {
 
     // Get MPIS data for this patient if available
     const patientNric = patient?.nsn || patient?.nric;
-    const mpisRecord = patientNric ? mpisPatientDatabase[patientNric] : null;
 
     // Auto-load historical data on mount
     useEffect(() => {
@@ -68,43 +67,55 @@ function PatientChart({ patient, onBack }) {
             // Simulate brief loading for smooth UX
             await new Promise(resolve => setTimeout(resolve, 500));
 
-            // Load historical data from MPIS or generate sample
-            if (mpisRecord?.mpisData?.vitalsHistory) {
-                setVitalsData(mpisRecord.mpisData.vitalsHistory);
+            // Load historical data from patient object (Supabase only)
+            const rawHistory = patient?.vitalsHistory || [];
+            console.log('📊 PatientChart loading vitals for:', patientNric, 'History:', rawHistory);
+
+            if (rawHistory.length > 0) {
+                // Normalize all entries to objects
+                const normalizedHistory = rawHistory.map(d => {
+                    try {
+                        return typeof d === 'string' ? JSON.parse(d) : d;
+                    } catch (e) {
+                        return d;
+                    }
+                });
+                setVitalsData(normalizedHistory);
             } else {
-                // Generate sample history for patients without MPIS data
-                const sampleHistory = generateSampleHistory();
-                setVitalsData(sampleHistory);
+                // No data available
+                setVitalsData([]);
             }
 
             setIsLoading(false);
         };
 
         loadData();
-    }, [patientNric]);
+    }, [patientNric, patient?.vitalsHistory]);
 
-    // Generate sample history for patients without MPIS data
-    const generateSampleHistory = () => {
-        const history = [];
-        const today = new Date();
-        for (let i = 11; i >= 0; i--) {
-            const date = new Date(today);
-            date.setMonth(date.getMonth() - i);
-            history.push({
-                date: date.toISOString().split('T')[0],
-                bpSystolic: 120 + Math.floor(Math.random() * 30),
-                bpDiastolic: 75 + Math.floor(Math.random() * 20),
-                hr: 65 + Math.floor(Math.random() * 20),
-                temp: 36.2 + Math.random() * 0.8,
-                spo2: 95 + Math.floor(Math.random() * 4),
-                weight: 70 + Math.floor(Math.random() * 10),
-            });
-        }
-        return history;
-    };
 
     const currentTabConfig = vitalsTabs.find(t => t.id === activeTab);
-    const latestVitals = vitalsData.length > 0 ? vitalsData[vitalsData.length - 1] : null;
+
+    // Aligned & Dynamic: Get current vitals from AppContext if this is the active patient
+    const { state } = useApp();
+    const isCurrentPatient = state.patient.nsn === patientNric;
+
+    let historyToDisplay = [...vitalsData];
+    if (isCurrentPatient && (state.vitals.bpSystolic || state.vitals.hr)) {
+        const currentEntry = {
+            date: 'Current',
+            bpSystolic: parseInt(state.vitals.bpSystolic) || 0,
+            bpDiastolic: parseInt(state.vitals.bpDiastolic) || 0,
+            hr: parseInt(state.vitals.hr) || 0,
+            temp: parseFloat(state.vitals.temp) || 0,
+            spo2: parseInt(state.vitals.spo2) || 0,
+            weight: parseFloat(state.vitals.weight) || 0,
+        };
+        historyToDisplay.push(currentEntry);
+    }
+
+    const latestVitals = historyToDisplay.length > 0 ? historyToDisplay[historyToDisplay.length - 1] : null;
+
+    // Use historyToDisplay instead of vitalsData for stats and chart
 
     return (
         <div className="space-y-6 animate-fadeIn">
@@ -146,9 +157,9 @@ function PatientChart({ patient, onBack }) {
                             </span>
                         </div>
                     </div>
-                    {mpisRecord && (
+                    {patient?.comorbidities && patient.comorbidities.length > 0 && (
                         <div className="flex flex-wrap gap-2">
-                            {mpisRecord.mpisData.comorbidities?.slice(0, 3).map((condition, i) => (
+                            {patient.comorbidities.slice(0, 3).map((condition, i) => (
                                 <Badge key={i} variant="warning" size="sm">{condition}</Badge>
                             ))}
                         </div>
@@ -180,101 +191,92 @@ function PatientChart({ patient, onBack }) {
                 })}
             </div>
 
-            {/* Vital Signs Chart */}
-            <GlassPanel className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-[var(--accent-primary)]/20 rounded-xl">
-                            {currentTabConfig && <currentTabConfig.icon className="w-5 h-5 text-[var(--accent-primary)]" />}
-                        </div>
-                        <div>
-                            <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                                {currentTabConfig?.label} Trends
-                            </h3>
-                            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                                {isLoading
-                                    ? 'Loading historical data...'
-                                    : `Showing ${vitalsData.length} data points from MPIS history`
-                                }
-                            </p>
+            {/* Two-Column Layout: Chart Left, Stats Right */}
+            <div className="flex flex-col lg:flex-row gap-6">
+                {/* Left: Vital Signs Chart */}
+                <GlassPanel className="p-6 flex-1 lg:w-2/3">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-[var(--accent-primary)]/20 rounded-xl">
+                                {currentTabConfig && <currentTabConfig.icon className="w-5 h-5 text-[var(--accent-primary)]" />}
+                            </div>
+                            <div>
+                                <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                                    {currentTabConfig?.label} Trends
+                                </h3>
+                                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                    {isLoading
+                                        ? 'Loading historical data...'
+                                        : `${vitalsData.length} data points`
+                                    }
+                                </p>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {isLoading ? (
-                    <div className="flex items-center justify-center h-64">
-                        <div className="animate-spin rounded-full h-8 w-8 border-2 border-[var(--accent-primary)] border-t-transparent" />
+                    {isLoading ? (
+                        <div className="flex items-center justify-center h-48">
+                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[var(--accent-primary)] border-t-transparent" />
+                        </div>
+                    ) : (
+                        <VitalsLineChart
+                            data={historyToDisplay}
+                            metrics={currentTabConfig?.metrics || []}
+                            height={250}
+                        />
+                    )}
+                </GlassPanel>
+
+                {/* Right: Quick Stats */}
+                {!isLoading && latestVitals && currentTabConfig && (
+                    <div className="lg:w-1/3 space-y-4">
+                        {currentTabConfig.metrics.map((metric) => {
+                            const values = historyToDisplay.map(d => d[metric.key]).filter(v => v !== undefined && !isNaN(v));
+                            const latest = latestVitals[metric.key];
+                            const min = values.length > 0 ? Math.min(...values) : 0;
+                            const max = values.length > 0 ? Math.max(...values) : 0;
+                            const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+
+                            return (
+                                <GlassCard key={metric.key} className="p-4">
+                                    <h4 className={`text-sm font-medium mb-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                                        {metric.label}
+                                    </h4>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="text-center">
+                                            <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Latest</div>
+                                            <div className="text-xl font-bold" style={{ color: metric.color }}>
+                                                {latest?.toFixed(metric.key === 'temp' ? 1 : 0) || '-'}
+                                            </div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Average</div>
+                                            <div className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                                                {avg?.toFixed(metric.key === 'temp' ? 1 : 0) || '-'}
+                                            </div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Min</div>
+                                            <div className="text-xl font-bold text-green-500">
+                                                {min?.toFixed(metric.key === 'temp' ? 1 : 0) || '-'}
+                                            </div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Max</div>
+                                            <div className="text-xl font-bold text-red-500">
+                                                {max?.toFixed(metric.key === 'temp' ? 1 : 0) || '-'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className={`text-xs text-center mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                                        {metric.unit}
+                                    </div>
+                                </GlassCard>
+                            );
+                        })}
                     </div>
-                ) : (
-                    <VitalsLineChart
-                        data={vitalsData}
-                        metrics={currentTabConfig?.metrics || []}
-                        height={350}
-                    />
                 )}
-            </GlassPanel>
-
-            {/* Quick Stats for Current Tab */}
-            {!isLoading && latestVitals && currentTabConfig && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {currentTabConfig.metrics.map((metric) => {
-                        const values = vitalsData.map(d => d[metric.key]).filter(v => v !== undefined);
-                        const latest = latestVitals[metric.key];
-                        const min = Math.min(...values);
-                        const max = Math.max(...values);
-                        const avg = values.reduce((a, b) => a + b, 0) / values.length;
-
-                        return (
-                            <React.Fragment key={metric.key}>
-                                <GlassCard className="p-4 text-center">
-                                    <div className={`text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                                        Latest
-                                    </div>
-                                    <div className="text-2xl font-bold" style={{ color: metric.color }}>
-                                        {latest?.toFixed(metric.key === 'temp' ? 1 : 0) || '-'}
-                                    </div>
-                                    <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                                        {metric.unit}
-                                    </div>
-                                </GlassCard>
-                                <GlassCard className="p-4 text-center">
-                                    <div className={`text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                                        Average
-                                    </div>
-                                    <div className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                                        {avg?.toFixed(metric.key === 'temp' ? 1 : 0) || '-'}
-                                    </div>
-                                    <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                                        {metric.unit}
-                                    </div>
-                                </GlassCard>
-                                <GlassCard className="p-4 text-center">
-                                    <div className={`text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                                        Min
-                                    </div>
-                                    <div className={`text-2xl font-bold text-green-500`}>
-                                        {min?.toFixed(metric.key === 'temp' ? 1 : 0) || '-'}
-                                    </div>
-                                    <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                                        {metric.unit}
-                                    </div>
-                                </GlassCard>
-                                <GlassCard className="p-4 text-center">
-                                    <div className={`text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                                        Max
-                                    </div>
-                                    <div className={`text-2xl font-bold text-red-500`}>
-                                        {max?.toFixed(metric.key === 'temp' ? 1 : 0) || '-'}
-                                    </div>
-                                    <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                                        {metric.unit}
-                                    </div>
-                                </GlassCard>
-                            </React.Fragment>
-                        );
-                    })}
-                </div>
-            )}
+            </div>
         </div>
     );
 }

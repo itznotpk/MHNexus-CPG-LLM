@@ -27,7 +27,14 @@ export function VitalsLineChart({ data, metrics, height = 300 }) {
 
     // Calculate scales for each metric
     const getMetricRange = (key) => {
-        const values = data.map(d => d[key]).filter(v => v !== undefined && v !== null);
+        const values = data.map(d => {
+            try {
+                const item = typeof d === 'string' ? JSON.parse(d) : d;
+                return parseFloat(item[key]);
+            } catch (e) {
+                return NaN;
+            }
+        }).filter(v => !isNaN(v));
         if (values.length === 0) return { min: 0, max: 100 };
         const min = Math.min(...values);
         const max = Math.max(...values);
@@ -38,14 +45,24 @@ export function VitalsLineChart({ data, metrics, height = 300 }) {
     const xScale = (index) => padding.left + (index / (data.length - 1 || 1)) * chartWidth;
 
     const yScale = (value, range) => {
-        const normalized = (value - range.min) / (range.max - range.min || 1);
+        const val = parseFloat(value);
+        if (isNaN(val)) return padding.top + chartHeight; // Bottom of chart
+        const normalized = (val - range.min) / (range.max - range.min || 1);
         return padding.top + chartHeight - (normalized * chartHeight);
     };
 
     // Generate path for a metric
     const generatePath = (metricKey, range) => {
         const points = data
-            .map((d, i) => d[metricKey] !== undefined ? { x: xScale(i), y: yScale(d[metricKey], range), value: d[metricKey] } : null)
+            .map((d, i) => {
+                try {
+                    const item = typeof d === 'string' ? JSON.parse(d) : d;
+                    const val = parseFloat(item[metricKey]);
+                    return !isNaN(val) ? { x: xScale(i), y: yScale(val, range), value: val } : null;
+                } catch (e) {
+                    return null;
+                }
+            })
             .filter(Boolean);
 
         if (points.length < 2) return '';
@@ -58,7 +75,10 @@ export function VitalsLineChart({ data, metrics, height = 300 }) {
     };
 
     const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        if (dateStr === 'Current') return 'Current';
         const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return dateStr;
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     };
 
@@ -147,9 +167,16 @@ export function VitalsLineChart({ data, metrics, height = 300 }) {
 
                                 {/* Data points */}
                                 {data.map((d, i) => {
-                                    if (d[metric.key] === undefined) return null;
+                                    let item = d;
+                                    try {
+                                        item = typeof d === 'string' ? JSON.parse(d) : d;
+                                    } catch (e) {
+                                        item = d;
+                                    }
+                                    const val = parseFloat(item[metric.key]);
+                                    if (isNaN(val)) return null;
                                     const x = xScale(i);
-                                    const y = yScale(d[metric.key], range);
+                                    const y = yScale(val, range);
                                     const isHovered = hoveredPoint?.index === i && hoveredPoint?.key === metric.key;
 
                                     return (

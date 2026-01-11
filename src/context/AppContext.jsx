@@ -1,17 +1,11 @@
 import React, { createContext, useContext, useState, useReducer } from 'react';
 import {
-  samplePatientData,
-  sampleClinicalNotes,
-  sampleVitals,
-  sampleMPISData,
   sampleDiagnosis,
   sampleCarePlan,
-  mpisPatientDatabase,
 } from '../data/sampleData';
-import { searchPatientByNRIC, isSupabaseConfigured } from '../lib/supabase';
+import { searchPatientByNRIC, savePatientVitals, isSupabaseConfigured } from '../lib/supabase';
 
-// Toggle this to switch between Supabase and mock data
-// Set to true once you've deployed the schema to Supabase
+// Always use Supabase for patient data
 const USE_SUPABASE = isSupabaseConfigured();
 
 const AppContext = createContext();
@@ -24,6 +18,7 @@ const initialState = {
     nsn: '',
     gender: '',
     age: null,
+    vitalsHistory: [],
   },
   clinicalNotes: '',
   vitals: {
@@ -103,13 +98,6 @@ function appReducer(state, action) {
           },
         },
       };
-    case 'LOAD_DEMO_DATA':
-      return {
-        ...state,
-        patient: samplePatientData,
-        clinicalNotes: sampleClinicalNotes.history,
-        vitals: sampleVitals,
-      };
     case 'RESET':
       return initialState;
     default:
@@ -151,6 +139,7 @@ export function AppProvider({ children }) {
             allergies: patient.allergies,
             comorbidities: patient.comorbidities,
             currentMeds: patient.currentMeds,
+            vitalsHistory: patient.vitalsHistory,
           }
         });
         return { found: true, patient: patient, mpisData: patient };
@@ -161,25 +150,10 @@ export function AppProvider({ children }) {
       }
     }
 
-    // Fallback to mock data
-    console.log('📦 Using mock data for NRIC:', nsn);
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Lookup patient by NRIC in the mock database
-        const patientRecord = mpisPatientDatabase[nsn];
-
-        if (patientRecord) {
-          // Patient found - auto-populate both patient and MPIS data
-          dispatch({ type: 'SET_PATIENT', payload: patientRecord.patient });
-          dispatch({ type: 'SET_MPIS_DATA', payload: patientRecord.mpisData });
-          resolve({ found: true, patient: patientRecord.patient, mpisData: patientRecord.mpisData });
-        } else {
-          // Patient not found - just set the NRIC in patient data
-          dispatch({ type: 'SET_PATIENT', payload: { nsn: nsn } });
-          resolve({ found: false, nsn: nsn });
-        }
-      }, 1500);
-    });
+    // Patient not found in Supabase - return not found
+    console.log('❌ Patient not found in database for NRIC:', nsn);
+    dispatch({ type: 'SET_PATIENT', payload: { nsn: nsn } });
+    return { found: false };
   };
 
   const analyzeAssessment = () => {
@@ -208,6 +182,36 @@ export function AppProvider({ children }) {
 
   const finalizePlan = () => {
     dispatch({ type: 'SET_STEP', payload: 4 });
+  };
+
+  const saveVitalsToDB = async () => {
+    if (!USE_SUPABASE || !state.patient.nsn) return;
+
+    const newVital = {
+      date: new Date().toISOString().split('T')[0],
+      bpSystolic: parseInt(state.vitals.bpSystolic),
+      bpDiastolic: parseInt(state.vitals.bpDiastolic),
+      hr: parseInt(state.vitals.hr),
+      temp: parseFloat(state.vitals.temp),
+      rr: parseInt(state.vitals.rr),
+      spo2: parseInt(state.vitals.spo2),
+      weight: parseFloat(state.vitals.weight),
+    };
+
+    console.log('💾 Saving vitals to DB:', newVital);
+    const result = await savePatientVitals(state.patient.nsn, newVital);
+
+    if (result.success) {
+      console.log('✅ Vitals saved successfully, new history:', result.history);
+      dispatch({
+        type: 'SET_PATIENT',
+        payload: { vitalsHistory: result.history }
+      });
+      return true;
+    } else {
+      console.error('❌ Failed to save vitals:', result.error);
+    }
+    return false;
   };
 
   const goToStep = (step) => {
@@ -253,6 +257,7 @@ export function AppProvider({ children }) {
     selectDiagnosis,
     resetApp,
     calculateBMI,
+    saveVitalsToDB,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

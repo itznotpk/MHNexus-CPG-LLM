@@ -61,7 +61,9 @@ function AppContent() {
         age: patient.age,
         gender: patient.gender,
         nsn: patient.nsn,
-        dob: '' // Can be calculated from age if needed
+        dob: '', // Can be calculated from age if needed
+        // Add vitalsHistory to patient state for chart trend data
+        vitalsHistory: patient.vitalsHistory || []
       }
     });
 
@@ -71,15 +73,14 @@ function AppContent() {
       dispatch({
         type: 'SET_VITALS',
         payload: {
-          bloodPressureSystolic: systolic,
-          bloodPressureDiastolic: diastolic,
-          heartRate: triage.vitals.hr?.toString() || '',
-          temperature: triage.vitals.temp?.toString() || '',
-          oxygenSaturation: triage.vitals.spo2?.toString() || '',
-          respiratoryRate: '',
+          bpSystolic: systolic,
+          bpDiastolic: diastolic,
+          hr: triage.vitals.hr?.toString() || '',
+          temp: triage.vitals.temp?.toString() || '',
+          spo2: triage.vitals.spo2?.toString() || '',
+          rr: triage.vitals.rr?.toString() || '',
           weight: '',
           height: '',
-          bmi: ''
         }
       });
     }
