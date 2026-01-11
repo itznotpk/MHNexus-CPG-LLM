@@ -1,7 +1,7 @@
 // Sample data for the CPG LLM demo application
 
 export const samplePatientData = {
-  name: "Ahmad bin Abdullah",
+  name: "Wong Kin Meng ",
   dob: "1958-03-15",
   nsn: "580315-08-1234",
   gender: "Male",
@@ -12,7 +12,7 @@ export const samplePatientData = {
 export const mpisPatientDatabase = {
   "580315-08-1234": {
     patient: {
-      name: "Ahmad bin Abdullah",
+      name: "Wong Kin Meng",
       dob: "1958-03-15",
       nsn: "580315-08-1234",
       gender: "Male",
@@ -66,7 +66,7 @@ export const mpisPatientDatabase = {
   },
   "680910-14-9012": {
     patient: {
-      name: "Rajesh a/l Krishnan",
+      name: "Rajesh A/L Krishnan",
       dob: "1968-09-10",
       nsn: "680910-14-9012",
       gender: "Male",

@@ -6,10 +6,10 @@ export const todaySchedule = [
     time: '09:00 AM',
     patient: {
       id: 'p-001',
-      name: 'Ahmad bin Abdullah',
+      name: 'Wong Kin Meng',
       age: 68,
       gender: 'Male',
-      nsn: '580315-08-1234',
+      nsn: '600521-04-1834',
       photo: null
     },
     status: 'waiting', // waiting, in-progress, done
@@ -58,7 +58,7 @@ export const todaySchedule = [
     time: '10:00 AM',
     patient: {
       id: 'p-003',
-      name: 'Raj Kumar a/l Muthu',
+      name: 'Raj Kumar A/L Muthu',
       age: 52,
       gender: 'Male',
       nsn: '740812-14-9012',
@@ -162,10 +162,10 @@ export const todaySchedule = [
 export const patientRegistry = [
   {
     id: 'p-001',
-    name: 'Ahmad bin Abdullah',
+    name: 'Wong Kin Meng',
     age: 68,
     gender: 'Male',
-    nsn: '580315-08-1234',
+    nsn: '600521-04-1834',
     status: 'active', // active, discharged, follow-up
     lastVisit: '2026-01-07',
     nextReview: '2026-01-10',
@@ -173,7 +173,7 @@ export const patientRegistry = [
     diagnoses: ['Type 2 Diabetes Mellitus', 'Diabetic Peripheral Neuropathy', 'Hypertension'],
     riskLevel: 'high',
     phone: '+60 12-345 6789',
-    email: 'ahmad.abdullah@email.com',
+    email: 'wongkinmeng@email.com',
     medicalHistory: {
       conditions: [
         { name: 'Type 2 Diabetes Mellitus', diagnosedDate: '2015-03-15', status: 'Active' },
@@ -219,7 +219,7 @@ export const patientRegistry = [
   },
   {
     id: 'p-003',
-    name: 'Raj Kumar a/l Muthu',
+    name: 'Raj Kumar A/L Muthu',
     age: 52,
     gender: 'Male',
     nsn: '740812-14-9012',
