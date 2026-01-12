@@ -369,6 +369,86 @@ export const updateProfile = async (updates) => {
   }
 };
 
+// ==============================================================================
+// CONSULTATION FUNCTIONS
+// ==============================================================================
+
+/**
+ * Save or update a consultation for a patient
+ * @param {string} patientNric - Patient's NRIC
+ * @param {string} clinicalNotes - Clinical notes text
+ * @param {string|null} nextReview - Next review date (YYYY-MM-DD format)
+ * @returns {Promise<{success: boolean, data: Object|null, error: Error|null}>}
+ */
+export const saveConsultation = async (patientNric, clinicalNotes, nextReview = null) => {
+  try {
+    // Use RPC function with SECURITY DEFINER to bypass RLS
+    const { data, error } = await supabase
+      .rpc('save_consultation_bypass', {
+        p_patient_nric: patientNric,
+        p_clinical_notes: clinicalNotes,
+        p_next_review: nextReview
+      });
+
+    if (error) {
+      console.error('Error saving consultation:', error);
+      return { success: false, data: null, error };
+    }
+
+    console.log('✅ Consultation saved:', data);
+    return { success: true, data, error: null };
+  } catch (err) {
+    console.error('Exception saving consultation:', err);
+    return { success: false, data: null, error: err };
+  }
+};
+
+/**
+ * Get consultation for a patient by NRIC
+ * @param {string} patientNric - Patient's NRIC
+ * @returns {Promise<{found: boolean, consultation: Object|null, error: Error|null}>}
+ */
+export const getPatientConsultation = async (patientNric) => {
+  try {
+    const { data, error } = await supabase
+      .from('consultations')
+      .select(`
+        *,
+        doctor:created_by(full_name)
+      `)
+      .eq('patient_nric', patientNric)
+      .single();
+
+    if (error) {
+      // PGRST116 means no rows found - not an error for our purposes
+      if (error.code === 'PGRST116') {
+        return { found: false, consultation: null, error: null };
+      }
+      console.error('Error fetching consultation:', error);
+      return { found: false, consultation: null, error };
+    }
+
+    return {
+      found: true,
+      consultation: {
+        patientNric: data.patient_nric,
+        clinicalNotes: data.clinical_notes,
+        nextReview: data.next_review,
+        consultationTime: data.consultation_time,
+        createdBy: data.created_by,
+        updatedBy: data.updated_by,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+        doctorName: data.doctor?.full_name || 'Unknown'
+      },
+      error: null
+    };
+  } catch (err) {
+    console.error('Exception fetching consultation:', err);
+    return { found: false, consultation: null, error: err };
+  }
+};
+
 // Export types for TypeScript users (these work as documentation in JS too)
 /**
  * @typedef {import('@supabase/supabase-js').User} User

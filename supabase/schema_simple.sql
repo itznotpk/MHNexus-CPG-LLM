@@ -343,16 +343,11 @@ CREATE POLICY "Users can insert own profile"
     TO authenticated
     WITH CHECK (auth.uid() = id);
 
--- Patients: All authenticated medical staff can view/edit patients
-CREATE POLICY "Patients viewable by authenticated users"
+-- Patients: SELECT for public, INSERT/UPDATE for authenticated only
+-- (Aligned with consultations table policies)
+CREATE POLICY "Patients viewable by public"
     ON public.patients FOR SELECT
-    TO authenticated
-    USING (true);
-
--- Allow anonymous read access for development (remove in production)
-CREATE POLICY "Patients viewable by anyone"
-    ON public.patients FOR SELECT
-    TO anon
+    TO public
     USING (true);
 
 CREATE POLICY "Patients insertable by authenticated users"

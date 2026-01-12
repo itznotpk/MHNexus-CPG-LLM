@@ -25,7 +25,120 @@ import {
 } from 'lucide-react';
 import { GlassCard } from '../shared/GlassCard';
 import { useTheme } from '../../context/ThemeContext';
-import { getAllPatients } from '../../lib/supabase';
+import { getAllPatients, getPatientConsultation } from '../../lib/supabase';
+
+// Helper component to display next review date from consultations
+function NextReviewDisplay({ patientNric, consultations, isDark, accent }) {
+  const consultation = consultations[patientNric];
+  
+  // Not loaded yet - show dash
+  if (consultation === undefined) {
+    return <span className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>—</span>;
+  }
+  
+  // No consultation or no next review
+  if (!consultation || !consultation.nextReview) {
+    return <span className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>—</span>;
+  }
+  
+  // Calculate days until TCA
+  const reviewDate = new Date(consultation.nextReview);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  reviewDate.setHours(0, 0, 0, 0);
+  const tcaDays = Math.ceil((reviewDate - today) / (1000 * 60 * 60 * 24));
+  
+  // Format date for display
+  const formattedDate = reviewDate.toLocaleDateString('en-GB', { 
+    day: '2-digit', 
+    month: 'short', 
+    year: 'numeric' 
+  });
+  
+  return (
+    <div className="flex items-center justify-center gap-2">
+      <Calendar className={`w-4 h-4 ${accent.text}`} />
+      <div>
+        <p className={`text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>{formattedDate}</p>
+        <p className={`text-xs font-medium ${tcaDays <= 3 ? 'text-amber-500' : tcaDays < 0 ? 'text-red-500' : isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+          {tcaDays < 0 ? `Overdue: ${Math.abs(tcaDays)} ${Math.abs(tcaDays) === 1 ? 'Day' : 'Days'}` : `TCA: ${tcaDays} ${tcaDays === 1 ? 'Day' : 'Days'}`}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Helper component to display clinical notes for a patient
+function ClinicalNotesDisplay({ patientNric, consultations, setConsultations, loadingNric, setLoadingNric, isDark }) {
+  const [localLoading, setLocalLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    // If we already have data cached, don't fetch again
+    if (consultations[patientNric] !== undefined) return;
+
+    const fetchConsultation = async () => {
+      setLocalLoading(true);
+      setLoadingNric(patientNric);
+
+      try {
+        const result = await getPatientConsultation(patientNric);
+        setConsultations(prev => ({
+          ...prev,
+          [patientNric]: result.found ? result.consultation : null
+        }));
+      } catch (err) {
+        console.error('Error fetching consultation:', err);
+        setConsultations(prev => ({
+          ...prev,
+          [patientNric]: null
+        }));
+      } finally {
+        setLocalLoading(false);
+        setLoadingNric(null);
+      }
+    };
+
+    fetchConsultation();
+  }, [patientNric, consultations, setConsultations, setLoadingNric]);
+
+  const consultation = consultations[patientNric];
+  const isLoading = loadingNric === patientNric || localLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2">
+        <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+        <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Loading clinical notes...</span>
+      </div>
+    );
+  }
+
+  if (!consultation || !consultation.clinicalNotes) {
+    return (
+      <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+        No clinical notes recorded
+      </p>
+    );
+  }
+
+  // Format the date
+  const consultDate = consultation.consultationTime
+    ? new Date(consultation.consultationTime).toLocaleString()
+    : 'Unknown date';
+
+  return (
+    <div>
+      <div className={`p-3 rounded-lg ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+        <p className={`text-sm whitespace-pre-wrap ${isDark ? 'text-white' : 'text-slate-800'}`}>
+          {consultation.clinicalNotes}
+        </p>
+      </div>
+      <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+        Last updated: {consultDate}
+      </p>
+    </div>
+  );
+}
 
 const MyPatients = ({ onViewChart, onNewPatient }) => {
   const { isDark, accent } = useTheme();
@@ -38,6 +151,8 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [showMedicalHistory, setShowMedicalHistory] = useState(false);
   const [historyPatient, setHistoryPatient] = useState(null);
+  const [patientConsultations, setPatientConsultations] = useState({}); // Cache consultations by NRIC
+  const [loadingConsultation, setLoadingConsultation] = useState(null);
 
   // Fetch patients from Supabase only
   const fetchPatients = useCallback(async () => {
@@ -93,6 +208,37 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
   useEffect(() => {
     fetchPatients();
   }, [fetchPatients]);
+
+  // Fetch consultations for all patients to display Next Review dates
+  useEffect(() => {
+    const fetchAllConsultations = async () => {
+      if (allPatients.length === 0) return;
+      
+      // Fetch consultations for all patients in parallel
+      const results = await Promise.all(
+        allPatients.map(async (patient) => {
+          if (patientConsultations[patient.nsn] !== undefined) {
+            return { nric: patient.nsn, consultation: patientConsultations[patient.nsn] };
+          }
+          try {
+            const result = await getPatientConsultation(patient.nsn);
+            return { nric: patient.nsn, consultation: result.found ? result.consultation : null };
+          } catch {
+            return { nric: patient.nsn, consultation: null };
+          }
+        })
+      );
+      
+      // Update state with all results
+      const newConsultations = {};
+      results.forEach(r => {
+        newConsultations[r.nric] = r.consultation;
+      });
+      setPatientConsultations(prev => ({ ...prev, ...newConsultations }));
+    };
+    
+    fetchAllConsultations();
+  }, [allPatients]);
 
   // Debounce search - wait 300ms after user stops typing
   useEffect(() => {
@@ -347,19 +493,12 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                       </div>
                     </td>
                     <td className="p-4 text-center">
-                      {patient.nextReview ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <Calendar className={`w-4 h-4 ${accent.text}`} />
-                          <div>
-                            <p className={`text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>{patient.nextReview}</p>
-                            <p className={`text-xs font-medium ${patient.tcaDays <= 3 ? 'text-amber-500' : isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                              TCA: {patient.tcaDays || '—'} {patient.tcaDays === 1 ? 'Day' : 'Days'}
-                            </p>
-                          </div>
-                        </div>
-                      ) : (
-                        <span className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>—</span>
-                      )}
+                      <NextReviewDisplay 
+                        patientNric={patient.nsn} 
+                        consultations={patientConsultations} 
+                        isDark={isDark} 
+                        accent={accent} 
+                      />
                     </td>
                     <td className="p-4 text-center">
                       {getRiskBadge(patient.riskLevel)}
@@ -398,10 +537,6 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                                 <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>Race</p>
                                 <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{patient.race || '—'}</p>
                               </div>
-                              <div>
-                                <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>Ethnicity</p>
-                                <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{patient.ethnicity || '—'}</p>
-                              </div>
                               <div className="col-span-2">
                                 <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>Allergies</p>
                                 <p className={`font-medium ${patient.allergies ? 'text-red-500' : isDark ? 'text-white' : 'text-slate-800'}`}>
@@ -439,16 +574,41 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                               </button>
                             </div>
 
+                            {/* Clinical Notes from Consultation */}
+                            <div className={`mb-4 pb-4 border-b ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
+                              <h4 className={`text-sm font-semibold uppercase mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                Clinical Notes
+                              </h4>
+                              <ClinicalNotesDisplay
+                                patientNric={patient.nsn}
+                                consultations={patientConsultations}
+                                setConsultations={setPatientConsultations}
+                                loadingNric={loadingConsultation}
+                                setLoadingNric={setLoadingConsultation}
+                                isDark={isDark}
+                              />
+                            </div>
+
                             {/* Current Medications */}
                             <div className="mb-4">
                               <h4 className={`text-sm font-semibold uppercase mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                                 Current Medications
                               </h4>
-                              <p className={`text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                                {patient.currentMeds
-                                  ? (Array.isArray(patient.currentMeds) ? patient.currentMeds.join(', ') : String(patient.currentMeds))
-                                  : 'No medications recorded'}
-                              </p>
+                              {patient.currentMeds && patient.currentMeds.length > 0 ? (
+                                <div className="space-y-1">
+                                  {patient.currentMeds.map((med, idx) => (
+                                    <p key={idx} className={`text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                                      {typeof med === 'object'
+                                        ? `${med.name || med.medication || 'Unknown'} ${med.dose || ''} ${med.frequency || ''}`.trim()
+                                        : String(med)}
+                                    </p>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                  No medications recorded
+                                </p>
+                              )}
                             </div>
                           </div>
                         </div>
