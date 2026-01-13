@@ -11,12 +11,12 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application built wit
 
 ## 🌟 Features
 
-**Latest Update (2026-01-11):**
-- **My Patients Dropdown Details**: Click the dropdown arrow on any patient to view full details (NRIC, Age, Gender, Race, Ethnicity, Allergies, Diagnoses, Medications, Vital Signs) inline.
-- **Removed Actions Column**: Actions column removed from My Patients table - View Chart is now accessible via the dropdown details.
-- **Welcome Greeting**: Home page greeting changed from time-based "Good Morning/Afternoon/Evening" to "Welcome".
+**Latest Update (2026-01-13):**
+- **Consultation UI Improvement**: "Analyze Clinical Assessment" button now hidden on initial NRIC search screen - only appears after patient lookup.
+- **My Patients Dropdown Details**: Click the dropdown arrow on any patient to view full details inline.
+- **Removed Actions Column**: Actions column removed from My Patients table - View Chart is now accessible via the dropdown.
+- **Welcome Greeting**: Home page greeting changed to "Welcome".
 - **Logo Update**: Updated sidebar logo to use MHNexus.png.
-- **Data Type Safety**: Fixed handling of database fields (allergies, diagnoses, medications) that may be stored as strings or arrays.
 - See [CHANGELOG.md](CHANGELOG.md) for details.
 
 ### 🏠 Sidebar Navigation & Dashboard
@@ -329,5 +329,5 @@ Proprietary - MHNexus Healthcare Solutions
 
 For a full list of changes, see [CHANGELOG.md](CHANGELOG.md).
 
-**Version**: 1.3.0 (My Patients Dropdown Details & UI Improvements, Jan 2026)
-**Last Updated**: January 11, 2026
+**Version**: 1.3.1 (Consultation UI Improvement, Jan 2026)
+**Last Updated**: January 13, 2026
