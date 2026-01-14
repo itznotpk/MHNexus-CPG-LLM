@@ -375,6 +375,7 @@ export const updateProfile = async (updates) => {
 
 /**
  * Save or update a consultation for a patient
+ * Uses RPC function with SECURITY DEFINER to bypass RLS (for demo)
  * @param {string} patientNric - Patient's NRIC
  * @param {string} clinicalNotes - Clinical notes text
  * @param {string|null} nextReview - Next review date (YYYY-MM-DD format)

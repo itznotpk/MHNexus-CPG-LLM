@@ -1,8 +1,8 @@
 -- ============================================================================
--- CONSULTATIONS TABLE - ADD NEXT_REVIEW & UPDATE FUNCTION
+-- CONSULTATIONS TABLE - WITH RPC BYPASS FOR DEMO
 -- ============================================================================
 -- Run this SQL in your Supabase SQL Editor
--- This adds next_review column and updates the function
+-- This adds next_review column and the bypass function for demo purposes
 -- Go to: Supabase Dashboard → SQL Editor → New Query → Paste & Run
 -- ============================================================================
 
@@ -27,7 +27,7 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 DROP FUNCTION IF EXISTS save_consultation_bypass(TEXT, TEXT);
 DROP FUNCTION IF EXISTS save_consultation_bypass(TEXT, TEXT, DATE);
 
--- Create updated SECURITY DEFINER function with next_review and NRIC validation
+-- Create SECURITY DEFINER function to bypass RLS (for demo purposes)
 CREATE OR REPLACE FUNCTION save_consultation_bypass(
     p_patient_nric TEXT,
     p_clinical_notes TEXT,
@@ -75,7 +75,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Grant execute to everyone (including anon)
+-- Grant execute to everyone (including anon) for demo
 GRANT EXECUTE ON FUNCTION save_consultation_bypass(TEXT, TEXT, DATE) TO anon;
 GRANT EXECUTE ON FUNCTION save_consultation_bypass(TEXT, TEXT, DATE) TO authenticated;
 
@@ -83,7 +83,9 @@ GRANT EXECUTE ON FUNCTION save_consultation_bypass(TEXT, TEXT, DATE) TO authenti
 -- DONE! Consultations table now has:
 --   - patient_nric (PK)
 --   - clinical_notes
---   - next_review (DATE) ← NEW
+--   - next_review (DATE)
 --   - consultation_time
 --   - created_by, updated_by, created_at, updated_at
+--
+-- RPC bypass function enabled for demo (no authentication required)
 -- ============================================================================

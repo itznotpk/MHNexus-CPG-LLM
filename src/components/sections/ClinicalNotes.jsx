@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, CheckCircle2, Edit3, Loader2, Calendar } from 'lucide-react';
+import { FileText, CheckCircle2, Edit3, Loader2, Calendar, Zap } from 'lucide-react';
 import { GlassCard, TextArea, Button, VoiceInputButton, VoiceStatusIndicator } from '../shared';
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -50,7 +50,11 @@ export function ClinicalNotes({ isConfirmed, onConfirm }) {
         // Show detailed error message
         const errorMsg = result.error?.message || result.error?.details || 'Unknown error';
         const errorCode = result.error?.code || '';
-        if (errorCode === '23503') {
+        
+        // Check for authentication/RLS error
+        if (result.error?.isAuthError || errorCode === '42501') {
+          setSaveError('Failed to save: Authentication required. Only authenticated users may insert or update consultations.');
+        } else if (errorCode === '23503') {
           setSaveError('Patient must be registered before saving clinical notes.');
         } else if (errorCode === '42P01') {
           setSaveError('Consultations table not found. Please run the SQL schema.');
@@ -71,6 +75,11 @@ export function ClinicalNotes({ isConfirmed, onConfirm }) {
     if (onConfirm) onConfirm(false);
   };
 
+  const handleDemoFill = () => {
+    const demoNotes = `Chest pain and tends to vomit`;
+    handleChange(demoNotes);
+  };
+
   return (
     <GlassCard className={`p-5 ${isConfirmed ? 'border-2 border-green-500/30' : ''}`}>
       <div className="flex items-center justify-between mb-4">
@@ -89,9 +98,26 @@ export function ClinicalNotes({ isConfirmed, onConfirm }) {
           </div>
           <VoiceStatusIndicator isListening={isListening} />
         </div>
-        <VoiceInputButton
-          onTranscript={handleVoiceTranscript}
-        />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleDemoFill}
+            disabled={isConfirmed}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all
+              ${isConfirmed
+                ? 'opacity-50 cursor-not-allowed'
+                : isDark
+                  ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
+                  : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+              }`}
+            title="Fill with demo data"
+          >
+            <Zap className="w-4 h-4" />
+            Demo Fill
+          </button>
+          <VoiceInputButton
+            onTranscript={handleVoiceTranscript}
+          />
+        </div>
       </div>
 
       <TextArea
