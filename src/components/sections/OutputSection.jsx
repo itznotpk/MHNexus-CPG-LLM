@@ -143,10 +143,13 @@ export function OutputSection() {
   const { patient, carePlan, diagnosis } = state;
   const [showPrintPreview, setShowPrintPreview] = useState(false);
 
-  // Get the selected diagnosis from the differentials array
-  const selectedDiagnosis = diagnosis?.differentials?.find(
-    (d) => d.id === diagnosis?.selectedDiagnosisId
-  ) || diagnosis?.differentials?.[0];
+  // Get the selected diagnoses from the differentials array (supports multiple selection)
+  const selectedIds = diagnosis?.selectedDiagnosisIds?.length > 0
+    ? diagnosis.selectedDiagnosisIds
+    : [diagnosis?.differentials?.[0]?.id].filter(Boolean);
+  const selectedDiagnoses = diagnosis?.differentials?.filter(
+    (d) => selectedIds.includes(d.id)
+  ) || [];
 
   const handleNewAssessment = () => {
     resetApp();
@@ -242,24 +245,30 @@ export function OutputSection() {
 
           {/* Diagnosis Summary */}
           <GlassCard className="p-5">
-            <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-800'}`}>Diagnosis Summary</h3>
-            <div className={`p-4 rounded-xl ${isDark ? 'bg-white/10' : 'bg-white/50'}`}>
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                    {selectedDiagnosis?.name}
-                  </p>
-                  <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                    ICD-11: {selectedDiagnosis?.icdCode}
-                  </p>
+            <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+              Diagnosis Summary ({selectedDiagnoses.length})
+            </h3>
+            <div className="space-y-3">
+              {selectedDiagnoses.map((diag, idx) => (
+                <div key={diag.id} className={`p-4 rounded-xl ${isDark ? 'bg-white/10' : 'bg-white/50'}`}>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                        {idx + 1}. {diag.name}
+                      </p>
+                      <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                        ICD-11: {diag.icdCode}
+                      </p>
+                    </div>
+                    <Badge
+                      variant={diag.risk === 'high' ? 'danger' : diag.risk === 'medium' ? 'warning' : 'success'}
+                      size="md"
+                    >
+                      {diag.risk?.charAt(0).toUpperCase() + diag.risk?.slice(1)} Risk
+                    </Badge>
+                  </div>
                 </div>
-                <Badge
-                  variant={selectedDiagnosis?.risk === 'high' ? 'danger' : selectedDiagnosis?.risk === 'medium' ? 'warning' : 'success'}
-                  size="md"
-                >
-                  {selectedDiagnosis?.risk?.charAt(0).toUpperCase() + selectedDiagnosis?.risk?.slice(1)} Risk
-                </Badge>
-              </div>
+              ))}
             </div>
           </GlassCard>
 

@@ -30,9 +30,11 @@ export function DiagnosisSection() {
     (a, b) => b.probability - a.probability
   );
 
-  // Get the selected diagnosis (or default to highest probability)
-  const selectedId = diagnosis.selectedDiagnosisId || sortedDifferentials[0]?.id;
-  const selectedDiagnosis = sortedDifferentials.find((d) => d.id === selectedId);
+  // Get the selected diagnoses (or default to highest probability)
+  const selectedIds = diagnosis.selectedDiagnosisIds?.length > 0
+    ? diagnosis.selectedDiagnosisIds
+    : [sortedDifferentials[0]?.id].filter(Boolean);
+  const selectedDiagnoses = sortedDifferentials.filter((d) => selectedIds.includes(d.id));
 
   const handleConfirm = () => {
     confirmDiagnosis();
@@ -57,7 +59,7 @@ export function DiagnosisSection() {
         </p>
       </div>
 
-      {/* AI Suggested Diagnosis - Shows the selected one */}
+      {/* AI Suggested Diagnosis - Shows selected diagnoses */}
       <GlassCard className="p-6 border-[var(--accent-primary)]/50 border-2">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -65,17 +67,27 @@ export function DiagnosisSection() {
               <Brain className="w-6 h-6 text-[var(--accent-primary)]" />
             </div>
             <div>
-              <span className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Selected Diagnosis</span>
-              <h3 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                {selectedDiagnosis?.name}
-              </h3>
+              <span className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                Selected Diagnos{selectedDiagnoses.length === 1 ? 'is' : 'es'} ({selectedDiagnoses.length})
+              </span>
+              <div className="space-y-1">
+                {selectedDiagnoses.map((diag, idx) => (
+                  <h3 key={diag.id} className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                    {idx + 1}. {diag.name}
+                  </h3>
+                ))}
+              </div>
             </div>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 mb-4">
-          <CodeBadge code={`ICD-11: ${selectedDiagnosis?.icdCode}`} />
-          <RiskBadge risk={selectedDiagnosis?.risk || 'medium'} />
+          {selectedDiagnoses.map((diag) => (
+            <React.Fragment key={diag.id}>
+              <CodeBadge code={`ICD-11: ${diag.icdCode}`} />
+              <RiskBadge risk={diag.risk || 'medium'} />
+            </React.Fragment>
+          ))}
         </div>
 
         <div className={`p-4 border rounded-xl ${isDark ? 'bg-amber-900/30 border-amber-500/30' : 'bg-amber-50/50 border-amber-200/50'}`}>
@@ -85,7 +97,7 @@ export function DiagnosisSection() {
               <p className={`font-medium ${isDark ? 'text-amber-300' : 'text-amber-800'}`}>Clinical Correlation Required</p>
               <p className={`text-sm mt-1 ${isDark ? 'text-amber-200/80' : 'text-amber-700'}`}>
                 This AI-generated diagnosis should be reviewed and confirmed by the treating clinician.
-                You may select an alternative diagnosis from the list below.
+                You may select multiple diagnoses from the list below by clicking on them.
               </p>
             </div>
           </div>
@@ -103,7 +115,7 @@ export function DiagnosisSection() {
 
         <div className="space-y-3">
           {sortedDifferentials.map((diff, idx) => {
-            const isSelected = diff.id === selectedId;
+            const isSelected = selectedIds.includes(diff.id);
             const isTopSuggestion = idx === 0;
 
             return (
@@ -173,7 +185,7 @@ export function DiagnosisSection() {
           glow={!isGeneratingPlan}
           className="min-w-[280px]"
         >
-          {isGeneratingPlan ? 'Generating Care Plan...' : 'Generate Care Plan'}
+          {isGeneratingPlan ? 'Generating Care Plan...' : `Generate Care Plan${selectedDiagnoses.length > 1 ? ` (${selectedDiagnoses.length} diagnoses)` : ''}`}
         </Button>
       </div>
 
@@ -181,7 +193,7 @@ export function DiagnosisSection() {
         <div className="flex flex-col items-center gap-4 py-6 animate-fadeIn">
           <div className={`flex items-center gap-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
             <Sparkles className="w-5 h-5 animate-pulse text-[var(--accent-primary)]" />
-            <span>AI is generating evidence-based care plan for {selectedDiagnosis?.name}...</span>
+            <span>AI is generating evidence-based care plan for {selectedDiagnoses.length === 1 ? selectedDiagnoses[0]?.name : `${selectedDiagnoses.length} diagnoses`}...</span>
           </div>
         </div>
       )}

@@ -15,10 +15,13 @@ export function generateCarePlanPDF({ patient, diagnosis, carePlan }) {
   const margin = 20;
   let yPos = 20;
 
-  // Get selected diagnosis
-  const selectedDiagnosis = diagnosis?.differentials?.find(
-    (d) => d.id === diagnosis?.selectedDiagnosisId
-  ) || diagnosis?.differentials?.[0];
+  // Get selected diagnoses (supports multiple selection)
+  const selectedIds = diagnosis?.selectedDiagnosisIds?.length > 0
+    ? diagnosis.selectedDiagnosisIds
+    : [diagnosis?.differentials?.[0]?.id].filter(Boolean);
+  const selectedDiagnoses = diagnosis?.differentials?.filter(
+    (d) => selectedIds.includes(d.id)
+  ) || [];
 
   // Helper function to add section header
   const addSectionHeader = (title) => {
@@ -97,12 +100,24 @@ export function generateCarePlanPDF({ patient, diagnosis, carePlan }) {
   yPos = doc.lastAutoTable.finalY + 10;
 
   // ===== DIAGNOSIS =====
-  addSectionHeader('PRIMARY DIAGNOSIS');
+  addSectionHeader(selectedDiagnoses.length > 1 ? 'DIAGNOSES' : 'PRIMARY DIAGNOSIS');
 
-  addText('Diagnosis', selectedDiagnosis?.name);
-  addText('ICD-11 Code', selectedDiagnosis?.icdCode);
-  addText('Probability', `${selectedDiagnosis?.probability}%`);
-  addText('Risk Level', selectedDiagnosis?.risk?.toUpperCase());
+  selectedDiagnoses.forEach((diag, idx) => {
+    if (selectedDiagnoses.length > 1) {
+      doc.setFont('helvetica', 'bold');
+      doc.text(`${idx + 1}. ${diag.name}`, margin, yPos);
+      yPos += 5;
+      addText('ICD-11 Code', diag.icdCode, 5);
+      addText('Probability', `${diag.probability}%`, 5);
+      addText('Risk Level', diag.risk?.toUpperCase(), 5);
+      yPos += 3;
+    } else {
+      addText('Diagnosis', diag.name);
+      addText('ICD-11 Code', diag.icdCode);
+      addText('Probability', `${diag.probability}%`);
+      addText('Risk Level', diag.risk?.toUpperCase());
+    }
+  });
   yPos += 5;
 
   // ===== CLINICAL SUMMARY =====

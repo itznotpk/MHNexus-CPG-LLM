@@ -30,31 +30,31 @@ import { getAllPatients, getPatientConsultation } from '../../lib/supabase';
 // Helper component to display next review date from consultations
 function NextReviewDisplay({ patientNric, consultations, isDark, accent }) {
   const consultation = consultations[patientNric];
-  
+
   // Not loaded yet - show dash
   if (consultation === undefined) {
     return <span className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>—</span>;
   }
-  
+
   // No consultation or no next review
   if (!consultation || !consultation.nextReview) {
     return <span className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>—</span>;
   }
-  
+
   // Calculate days until TCA
   const reviewDate = new Date(consultation.nextReview);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   reviewDate.setHours(0, 0, 0, 0);
   const tcaDays = Math.ceil((reviewDate - today) / (1000 * 60 * 60 * 24));
-  
+
   // Format date for display
-  const formattedDate = reviewDate.toLocaleDateString('en-GB', { 
-    day: '2-digit', 
-    month: 'short', 
-    year: 'numeric' 
+  const formattedDate = reviewDate.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
   });
-  
+
   return (
     <div className="flex items-center justify-center gap-2">
       <Calendar className={`w-4 h-4 ${accent.text}`} />
@@ -213,7 +213,7 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
   useEffect(() => {
     const fetchAllConsultations = async () => {
       if (allPatients.length === 0) return;
-      
+
       // Fetch consultations for all patients in parallel
       const results = await Promise.all(
         allPatients.map(async (patient) => {
@@ -228,7 +228,7 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
           }
         })
       );
-      
+
       // Update state with all results
       const newConsultations = {};
       results.forEach(r => {
@@ -236,7 +236,7 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
       });
       setPatientConsultations(prev => ({ ...prev, ...newConsultations }));
     };
-    
+
     fetchAllConsultations();
   }, [allPatients]);
 
@@ -481,23 +481,32 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                     </td>
                     <td className="p-4">
                       <div className="max-w-[200px]">
-                        {patient.diagnoses && patient.diagnoses.length > 0 ? (
-                          patient.diagnoses.map((dx, i) => (
-                            <p key={i} className={`text-sm ${i > 0 ? 'mt-1' : ''} ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                              • {dx}
-                            </p>
-                          ))
-                        ) : (
-                          <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>—</p>
-                        )}
+                        {(() => {
+                          // Get diagnoses from consultation if available, otherwise fall back to patient comorbidities
+                          const consultation = patientConsultations[patient.nsn];
+                          const consultDiagnoses = consultation?.diagnoses || [];
+                          const displayDiagnoses = consultDiagnoses.length > 0
+                            ? consultDiagnoses.map(d => typeof d === 'object' ? d.name : d)
+                            : patient.diagnoses || [];
+
+                          return displayDiagnoses.length > 0 ? (
+                            displayDiagnoses.map((dx, i) => (
+                              <p key={i} className={`text-sm ${i > 0 ? 'mt-1' : ''} ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                                • {typeof dx === 'object' ? dx.name : dx}
+                              </p>
+                            ))
+                          ) : (
+                            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>—</p>
+                          );
+                        })()}
                       </div>
                     </td>
                     <td className="p-4 text-center">
-                      <NextReviewDisplay 
-                        patientNric={patient.nsn} 
-                        consultations={patientConsultations} 
-                        isDark={isDark} 
-                        accent={accent} 
+                      <NextReviewDisplay
+                        patientNric={patient.nsn}
+                        consultations={patientConsultations}
+                        isDark={isDark}
+                        accent={accent}
                       />
                     </td>
                     <td className="p-4 text-center">
@@ -552,63 +561,126 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                               <h4 className={`text-sm font-semibold uppercase mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                                 Diagnoses / Medical History
                               </h4>
-                              <p className={`text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                                {patient.diagnoses
-                                  ? (Array.isArray(patient.diagnoses) ? patient.diagnoses.join(', ') : String(patient.diagnoses))
-                                  : 'No diagnoses recorded'}
-                              </p>
-                            </div>
+                              {(() => {
+                                // Get diagnoses from consultation (selected differential diagnoses from database)
+                                const consultation = patientConsultations[patient.nsn];
+                                const consultDiagnoses = consultation?.diagnoses || [];
+                                const MAX_VISIBLE = 3;
 
-                            {/* Vital Signs with View Chart Button */}
-                            <div className="mb-4">
-                              <h4 className={`text-sm font-semibold uppercase mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                                Recent Vital Signs
-                              </h4>
-                              <button
-                                onClick={() => onViewChart && onViewChart(patient)}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium
-                                  bg-gradient-to-r ${accent.gradient} text-white transition-all hover:opacity-90`}
-                              >
-                                <FileText className="w-4 h-4" />
-                                View Chart
-                              </button>
-                            </div>
+                                if (consultDiagnoses.length > 0) {
+                                  const consultTime = consultation?.consultationTime
+                                    ? new Date(consultation.consultationTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                                    : null;
+                                  const hasMore = consultDiagnoses.length > MAX_VISIBLE;
 
-                            {/* Clinical Notes from Consultation */}
-                            <div className={`mb-4 pb-4 border-b ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
-                              <h4 className={`text-sm font-semibold uppercase mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                                Clinical Notes
-                              </h4>
-                              <ClinicalNotesDisplay
-                                patientNric={patient.nsn}
-                                consultations={patientConsultations}
-                                setConsultations={setPatientConsultations}
-                                loadingNric={loadingConsultation}
-                                setLoadingNric={setLoadingConsultation}
-                                isDark={isDark}
-                              />
-                            </div>
-
-                            {/* Current Medications */}
-                            <div className="mb-4">
-                              <h4 className={`text-sm font-semibold uppercase mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                                Current Medications
-                              </h4>
-                              {patient.currentMeds && patient.currentMeds.length > 0 ? (
-                                <div className="space-y-1">
-                                  {patient.currentMeds.map((med, idx) => (
-                                    <p key={idx} className={`text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                                      {typeof med === 'object'
-                                        ? `${med.name || med.medication || 'Unknown'} ${med.dose || ''} ${med.frequency || ''}`.trim()
-                                        : String(med)}
+                                  return (
+                                    <div>
+                                      {/* Scrollable container with max height */}
+                                      <div className={`space-y-2 ${hasMore ? 'max-h-48 overflow-y-auto pr-2' : ''}`} style={hasMore ? { scrollbarWidth: 'thin' } : {}}>
+                                        {consultDiagnoses.map((dx, i) => (
+                                          <div key={dx.id || i} className={`p-2 rounded-lg ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+                                            <div className="flex items-start justify-between">
+                                              <div>
+                                                <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                                                  {typeof dx === 'object' ? dx.name : dx}
+                                                </p>
+                                                {typeof dx === 'object' && dx.icdCode && (
+                                                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                                    ICD-11: {dx.icdCode}
+                                                  </p>
+                                                )}
+                                              </div>
+                                              {consultTime && (
+                                                <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                                                  {consultTime}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                      {/* Show count indicator if scrollable */}
+                                      {hasMore && (
+                                        <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                                          Showing all {consultDiagnoses.length} diagnoses (scroll to view)
+                                        </p>
+                                      )}
+                                    </div>
+                                  );
+                                } else if (patient.diagnoses && patient.diagnoses.length > 0) {
+                                  // Fall back to patient comorbidities
+                                  return (
+                                    <p className={`text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                                      {Array.isArray(patient.diagnoses) ? patient.diagnoses.join(', ') : String(patient.diagnoses)}
                                     </p>
-                                  ))}
+                                  );
+                                } else {
+                                  return (
+                                    <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                      No diagnoses recorded
+                                    </p>
+                                  );
+                                }
+                              })()}
+                            </div>
+
+                            {/* Three-column grid for Vital Signs, Clinical Notes, Current Medications */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              {/* Recent Vital Signs */}
+                              <div className={`p-4 rounded-xl ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+                                <h4 className={`text-sm font-semibold uppercase mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                  Recent Vital Signs
+                                </h4>
+                                <button
+                                  onClick={() => onViewChart && onViewChart(patient)}
+                                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium
+                                    bg-gradient-to-r ${accent.gradient} text-white transition-all hover:opacity-90`}
+                                >
+                                  <FileText className="w-4 h-4" />
+                                  View Chart
+                                </button>
+                              </div>
+
+                              {/* Clinical Notes */}
+                              <div className={`p-4 rounded-xl ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+                                <h4 className={`text-sm font-semibold uppercase mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                  Clinical Notes
+                                </h4>
+                                <div className="max-h-32 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+                                  <ClinicalNotesDisplay
+                                    patientNric={patient.nsn}
+                                    consultations={patientConsultations}
+                                    setConsultations={setPatientConsultations}
+                                    loadingNric={loadingConsultation}
+                                    setLoadingNric={setLoadingConsultation}
+                                    isDark={isDark}
+                                  />
                                 </div>
-                              ) : (
-                                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                                  No medications recorded
-                                </p>
-                              )}
+                              </div>
+
+                              {/* Current Medications */}
+                              <div className={`p-4 rounded-xl ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+                                <h4 className={`text-sm font-semibold uppercase mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                  Current Medications
+                                </h4>
+                                <div className="max-h-32 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+                                  {patient.currentMeds && patient.currentMeds.length > 0 ? (
+                                    <div className="space-y-1">
+                                      {patient.currentMeds.map((med, idx) => (
+                                        <p key={idx} className={`text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                                          • {typeof med === 'object'
+                                            ? `${med.name || med.medication || 'Unknown'} ${med.dose || ''} ${med.frequency || ''}`.trim()
+                                            : String(med)}
+                                        </p>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                      No medications recorded
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>

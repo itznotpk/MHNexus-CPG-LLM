@@ -3,7 +3,7 @@ import {
   sampleDiagnosis,
   sampleCarePlan,
 } from '../data/sampleData';
-import { searchPatientByNRIC, savePatientVitals, isSupabaseConfigured } from '../lib/supabase';
+import { searchPatientByNRIC, savePatientVitals, isSupabaseConfigured, saveConsultation } from '../lib/supabase';
 
 // Always use Supabase for patient data
 const USE_SUPABASE = isSupabaseConfigured();
@@ -57,14 +57,21 @@ function appReducer(state, action) {
       return { ...state, mpisData: action.payload, mpisSynced: true };
     case 'SET_DIAGNOSIS':
       return { ...state, diagnosis: action.payload };
-    case 'SELECT_DIAGNOSIS':
+    case 'SELECT_DIAGNOSIS': {
+      const currentSelected = state.diagnosis?.selectedDiagnosisIds || [];
+      const diagnosisId = action.payload;
+      const isAlreadySelected = currentSelected.includes(diagnosisId);
+      const newSelected = isAlreadySelected
+        ? currentSelected.filter(id => id !== diagnosisId)
+        : [...currentSelected, diagnosisId];
       return {
         ...state,
         diagnosis: {
           ...state.diagnosis,
-          selectedDiagnosisId: action.payload
+          selectedDiagnosisIds: newSelected
         }
       };
+    }
     case 'SET_CARE_PLAN':
       return { ...state, carePlan: action.payload };
     case 'SET_STEP':
@@ -168,8 +175,50 @@ export function AppProvider({ children }) {
     });
   };
 
-  const confirmDiagnosis = () => {
+  const confirmDiagnosis = async () => {
     dispatch({ type: 'SET_GENERATING_PLAN', payload: true });
+
+    // Get selected diagnoses
+    const selectedIds = state.diagnosis?.selectedDiagnosisIds?.length > 0
+      ? state.diagnosis.selectedDiagnosisIds
+      : [state.diagnosis?.differentials?.[0]?.id].filter(Boolean);
+    const selectedDiagnoses = state.diagnosis?.differentials?.filter(
+      (d) => selectedIds.includes(d.id)
+    ) || [];
+
+    // Save to database - include diagnoses, clinical notes, and default follow-up
+    if (USE_SUPABASE && state.patient.nsn) {
+      try {
+        const nextReview = new Date();
+        nextReview.setDate(nextReview.getDate() + 28); // Default 4 weeks follow-up
+        const nextReviewStr = nextReview.toISOString().split('T')[0];
+
+        // Format diagnoses for storage (just the essential info)
+        const diagnosesForDB = selectedDiagnoses.map(d => ({
+          id: d.id,
+          name: d.name,
+          icdCode: d.icdCode,
+          probability: d.probability,
+          risk: d.risk
+        }));
+
+        const result = await saveConsultation(
+          state.patient.nsn,
+          state.clinicalNotes,
+          nextReviewStr,
+          diagnosesForDB
+        );
+
+        if (result.success) {
+          console.log('✅ Diagnoses saved to database:', diagnosesForDB);
+        } else {
+          console.warn('⚠️ Failed to save diagnoses:', result.error);
+        }
+      } catch (err) {
+        console.error('Error saving diagnoses to DB:', err);
+      }
+    }
+
     return new Promise((resolve) => {
       setTimeout(() => {
         dispatch({ type: 'SET_CARE_PLAN', payload: sampleCarePlan });

@@ -379,16 +379,18 @@ export const updateProfile = async (updates) => {
  * @param {string} patientNric - Patient's NRIC
  * @param {string} clinicalNotes - Clinical notes text
  * @param {string|null} nextReview - Next review date (YYYY-MM-DD format)
+ * @param {Array|null} diagnoses - Array of selected diagnoses objects
  * @returns {Promise<{success: boolean, data: Object|null, error: Error|null}>}
  */
-export const saveConsultation = async (patientNric, clinicalNotes, nextReview = null) => {
+export const saveConsultation = async (patientNric, clinicalNotes, nextReview = null, diagnoses = []) => {
   try {
     // Use RPC function with SECURITY DEFINER to bypass RLS
     const { data, error } = await supabase
       .rpc('save_consultation_bypass', {
         p_patient_nric: patientNric,
         p_clinical_notes: clinicalNotes,
-        p_next_review: nextReview
+        p_next_review: nextReview,
+        p_diagnoses: diagnoses
       });
 
     if (error) {
@@ -435,6 +437,7 @@ export const getPatientConsultation = async (patientNric) => {
         patientNric: data.patient_nric,
         clinicalNotes: data.clinical_notes,
         nextReview: data.next_review,
+        diagnoses: data.diagnoses || [],
         consultationTime: data.consultation_time,
         createdBy: data.created_by,
         updatedBy: data.updated_by,

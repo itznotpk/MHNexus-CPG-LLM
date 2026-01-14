@@ -12,10 +12,12 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application built wit
 ## 🌟 Features
 
 **Latest Update (2026-01-14):**
+- **Multiple Diagnosis Selection**: Doctors can now select multiple differential diagnoses during consultation (not just one).
+- **Diagnoses Database Storage**: Selected diagnoses are saved to the database and accumulate over multiple consultations.
+- **My Patients Diagnoses Sync**: Diagnoses from consultations are now displayed in the My Patients tab (table column and detail view).
+- **Improved Patient Detail Layout**: Reorganized the patient detail view with a 3-column grid for Vital Signs, Clinical Notes, and Medications.
+- **Scrollable Diagnoses List**: Long diagnosis lists now have max-height scrollable containers.
 - **ICD-11 Update**: Changed all diagnosis codes from ICD-10 to ICD-11 throughout the application.
-- **Vitals Chart Y-Axis Labels**: Added Y-axis labels that display actual data range (min to max) instead of starting from 0.
-- **Patient Chart Stats Fix**: Fixed Min/Max/Average display to show actual data values instead of defaulting to 0.
-- **Consultation UI Improvement**: "Analyze Clinical Assessment" button now hidden on initial NRIC search screen.
 - See [CHANGELOG.md](CHANGELOG.md) for details.
 
 ### 🏠 Sidebar Navigation & Dashboard
@@ -34,6 +36,9 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application built wit
 - **Patient Registry**: Searchable patient database with initial-based colored avatars
 - **Status Filters**: Active, Follow-up, Discharged tabs for easy management
 - **Inline Expansion**: Click any patient row to view full details directly below it
+- **Diagnoses Sync**: Shows selected differential diagnoses from consultations (synced from database)
+- **3-Column Detail Layout**: Vital Signs, Clinical Notes, and Medications displayed side-by-side
+- **Scrollable Lists**: Long diagnoses/medications lists have max-height containers
 - **Medical History**: Access detailed historical data (conditions, meds, labs, procedures) in a dedicated modal
 - **Quick Actions**: View history, view vital charts, schedule appointment, and start consult
 - **Risk Indicators**: Visual badges and single-line displays for patient risk levels
@@ -57,9 +62,10 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application built wit
 
 #### 2. AI Diagnosis Section
 - **AI-Generated Differential Diagnoses**: Ranked by probability
-- **ICD-10 Codes**: Automatically assigned to each diagnosis
+- **Multiple Selection**: Click to select one or more diagnoses for care plan generation
+- **ICD-11 Codes**: Automatically assigned to each diagnosis
 - **Risk Assessment Badges**: High/Medium/Low risk indicators
-- **Selectable Diagnoses**: Click to select any diagnosis for care plan generation
+- **Database Storage**: Selected diagnoses saved to consultations table and accumulated over time
 
 #### 3. Care Plan Section
 - **Clinical Summary**: AI-generated patient overview
@@ -328,5 +334,5 @@ Proprietary - MHNexus Healthcare Solutions
 
 For a full list of changes, see [CHANGELOG.md](CHANGELOG.md).
 
-**Version**: 1.4.0 (ICD-11 Update & Chart Improvements, Jan 2026)
+**Version**: 1.5.0 (Multi-Diagnosis Selection & My Patients Sync, Jan 2026)
 **Last Updated**: January 14, 2026

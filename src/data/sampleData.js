@@ -139,7 +139,7 @@ export const sampleDiagnosis = {
     { id: 4, name: "Chronic Kidney Disease Stage 2-3", icdCode: "N18.3", probability: 25, risk: "medium" },
     { id: 5, name: "Hypertensive Heart Disease", icdCode: "I11.9", probability: 15, risk: "low" },
   ],
-  selectedDiagnosisId: 1,
+  selectedDiagnosisIds: [1],
 };
 
 export const sampleCarePlan = {
