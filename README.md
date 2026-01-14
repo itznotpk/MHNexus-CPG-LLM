@@ -11,13 +11,14 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application built wit
 
 ## 🌟 Features
 
-**Latest Update (2026-01-14):**
-- **Multiple Diagnosis Selection**: Doctors can now select multiple differential diagnoses during consultation (not just one).
-- **Diagnoses Database Storage**: Selected diagnoses are saved to the database and accumulate over multiple consultations.
-- **My Patients Diagnoses Sync**: Diagnoses from consultations are now displayed in the My Patients tab (table column and detail view).
+**Latest Update (2026-01-15):**
+- **Medication Sync**: Care plan recommendations (START, STOP, CHANGE) now automatically update the patient's record in the database.
+- **Historical Diagnoses with Timestamps**: Diagnoses now store specific `recordedAt` timestamps.
+- **Chronological Sorting**: Patient history now displays from latest to oldest with high-precision time (HH:mm).
+- **Table View Optimization**: Main table now only shows the most recent diagnosis group for a cleaner interface.
+- **Robust Data Handling**: Improved JSONB merging logic and fixed data corruption issues in Supabase integration.
 - **Improved Patient Detail Layout**: Reorganized the patient detail view with a 3-column grid for Vital Signs, Clinical Notes, and Medications.
-- **Scrollable Diagnoses List**: Long diagnosis lists now have max-height scrollable containers.
-- **ICD-11 Update**: Changed all diagnosis codes from ICD-10 to ICD-11 throughout the application.
+- **ICD-11 Update**: All diagnosis codes updated to ICD-11 throughout the application.
 - See [CHANGELOG.md](CHANGELOG.md) for details.
 
 ### 🏠 Sidebar Navigation & Dashboard
@@ -334,5 +335,5 @@ Proprietary - MHNexus Healthcare Solutions
 
 For a full list of changes, see [CHANGELOG.md](CHANGELOG.md).
 
-**Version**: 1.5.0 (Multi-Diagnosis Selection & My Patients Sync, Jan 2026)
-**Last Updated**: January 14, 2026
+**Version**: 1.6.0 (Medication Sync & Chronological History, Jan 2026)
+**Last Updated**: January 15, 2026

@@ -3,7 +3,7 @@ import {
   sampleDiagnosis,
   sampleCarePlan,
 } from '../data/sampleData';
-import { searchPatientByNRIC, savePatientVitals, isSupabaseConfigured, saveConsultation } from '../lib/supabase';
+import { searchPatientByNRIC, savePatientVitals, isSupabaseConfigured, saveConsultation, updatePatientMedications } from '../lib/supabase';
 
 // Always use Supabase for patient data
 const USE_SUPABASE = isSupabaseConfigured();
@@ -193,13 +193,15 @@ export function AppProvider({ children }) {
         nextReview.setDate(nextReview.getDate() + 28); // Default 4 weeks follow-up
         const nextReviewStr = nextReview.toISOString().split('T')[0];
 
-        // Format diagnoses for storage (just the essential info)
+        // Format diagnoses for storage with current timestamp
+        const now = new Date().toISOString();
         const diagnosesForDB = selectedDiagnoses.map(d => ({
           id: d.id,
           name: d.name,
           icdCode: d.icdCode,
           probability: d.probability,
-          risk: d.risk
+          risk: d.risk,
+          recordedAt: now
         }));
 
         const result = await saveConsultation(
@@ -229,7 +231,37 @@ export function AppProvider({ children }) {
     });
   };
 
-  const finalizePlan = () => {
+  const finalizePlan = async () => {
+    // Sync medications from care plan to database
+    console.log('🔄 Finalizing plan, current state:', {
+      patientNric: state.patient.nsn,
+      carePlan: state.carePlan,
+      medications: state.carePlan?.medications
+    });
+
+    if (USE_SUPABASE && state.patient.nsn && state.carePlan?.medications) {
+      try {
+        console.log('💊 Triggering medication sync to DB...');
+        const result = await updatePatientMedications(
+          state.patient.nsn,
+          state.carePlan.medications
+        );
+        if (result.success) {
+          console.log('✅ Medications synced to database successfully:', result.medications);
+        } else {
+          console.error('❌ Failed to sync medications:', result.error);
+        }
+      } catch (err) {
+        console.error('💥 Exception during medication sync:', err);
+      }
+    } else {
+      console.warn('⚠️ Skipping medication sync:', {
+        useSupabase: USE_SUPABASE,
+        nsn: state.patient.nsn,
+        hasMeds: !!state.carePlan?.medications
+      });
+    }
+
     dispatch({ type: 'SET_STEP', payload: 4 });
   };
 

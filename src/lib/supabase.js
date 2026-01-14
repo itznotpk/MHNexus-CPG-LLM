@@ -195,8 +195,8 @@ export const updatePatientFromMPIS = async (nric, mpisData) => {
         p_nric: nric,
         p_allergies: mpisData.allergies || null,
         p_comorbidities: mpisData.comorbidities || null,
-        p_current_medications: mpisData.currentMeds ? JSON.stringify(mpisData.currentMeds) : null,
-        p_mpis_data: mpisData.rawData ? JSON.stringify(mpisData.rawData) : null,
+        p_current_medications: mpisData.currentMeds || [],
+        p_mpis_data: mpisData || {},
       });
 
     if (error) {
@@ -234,6 +234,151 @@ export const savePatientVitals = async (nric, vitals) => {
   } catch (err) {
     console.error('Exception saving patient vitals:', err);
     return { success: false, history: null, error: err };
+  }
+};
+
+/**
+ * Update patient medications from care plan
+ * This syncs the care plan medication changes to the patient's current_medications
+ * @param {string} nric - Patient's NRIC
+ * @param {Object} medications - Care plan medications object with stop, start, change, continue arrays
+ * @returns {Promise<{success: boolean, medications: Array|null, error: Error|null}>}
+ */
+export const updatePatientMedications = async (nric, medications) => {
+  try {
+    console.log('💊 Updating medications for patient:', nric);
+    console.log('📋 Care plan medications:', medications);
+
+    // First, get current medications for this patient
+    const { data: patientData, error: fetchError } = await supabase
+      .from('patients')
+      .select('current_medications')
+      .eq('nric', nric)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching patient medications:', fetchError);
+    }
+
+    let currentMeds = patientData?.current_medications || [];
+
+    // Safety check: if currentMeds is somehow a string (due to previous corruption), parse it
+    if (typeof currentMeds === 'string') {
+      try {
+        currentMeds = JSON.parse(currentMeds);
+      } catch (e) {
+        currentMeds = [];
+      }
+    }
+
+    if (!Array.isArray(currentMeds)) currentMeds = [];
+
+    console.log('📦 Current medications in DB:', currentMeds);
+
+    // Remove STOP medications
+    if (medications.stop && medications.stop.length > 0) {
+      const stopNames = medications.stop.map(m => (m.name || m.medication || '').toLowerCase());
+      console.log('🛑 Stopping medications:', stopNames);
+      currentMeds = currentMeds.filter(m => {
+        const medName = (m.name || m.medication || '').toLowerCase();
+        return medName && !stopNames.includes(medName);
+      });
+    }
+
+    // Update CHANGE medications (update dose)
+    if (medications.change && medications.change.length > 0) {
+      console.log('🔄 Changing medications:', medications.change);
+      medications.change.forEach(changedMed => {
+        const existingIndex = currentMeds.findIndex(m =>
+          (m.name || m.medication || '').toLowerCase() === (changedMed.name || changedMed.medication || '').toLowerCase()
+        );
+        if (existingIndex !== -1) {
+          // Update the dose
+          currentMeds[existingIndex] = {
+            name: changedMed.name || changedMed.medication,
+            dose: changedMed.newDose || changedMed.dose,
+            frequency: changedMed.frequency || currentMeds[existingIndex].frequency || 'OD'
+          };
+        } else {
+          // Medication not in current list, add it with new dose
+          currentMeds.push({
+            name: changedMed.name || changedMed.medication,
+            dose: changedMed.newDose || changedMed.dose,
+            frequency: changedMed.frequency || 'OD'
+          });
+        }
+      });
+    }
+
+    // Add START medications (if not already present)
+    if (medications.start && medications.start.length > 0) {
+      console.log('🟢 Starting medications:', medications.start);
+      medications.start.forEach(newMed => {
+        const alreadyExists = currentMeds.some(m =>
+          (m.name || m.medication || '').toLowerCase() === (newMed.name || newMed.medication || '').toLowerCase()
+        );
+        if (!alreadyExists) {
+          currentMeds.push({
+            name: newMed.name || newMed.medication,
+            dose: newMed.dose,
+            frequency: newMed.frequency || 'OD'
+          });
+        }
+      });
+    }
+
+    // Ensure CONTINUE medications are also in the list
+    if (medications.continue && medications.continue.length > 0) {
+      medications.continue.forEach(contMed => {
+        const alreadyExists = currentMeds.some(m =>
+          (m.name || m.medication || '').toLowerCase() === (contMed.name || contMed.medication || '').toLowerCase()
+        );
+        if (!alreadyExists) {
+          currentMeds.push({
+            name: contMed.name || contMed.medication,
+            dose: contMed.dose,
+            frequency: contMed.frequency || 'OD'
+          });
+        }
+      });
+    }
+
+    console.log('📝 Final medications to save:', currentMeds);
+
+    // Use RPC function to bypass RLS
+    const { data: rpcData, error: rpcError } = await supabase
+      .rpc('update_patient_medications', {
+        p_nric: nric,
+        p_medications: currentMeds
+      });
+
+    if (rpcError) {
+      console.error('RPC Error updating patient medications:', rpcError);
+
+      // Fallback: Try direct update
+      console.log('⚠️ Trying direct update as fallback...');
+      const { data: directData, error: directError } = await supabase
+        .from('patients')
+        .update({
+          current_medications: currentMeds,
+          updated_at: new Date().toISOString()
+        })
+        .eq('nric', nric);
+
+      if (directError) {
+        console.error('Direct update also failed:', directError);
+        return { success: false, medications: null, error: directError };
+      }
+
+      console.log('✅ Patient medications updated via direct update:', currentMeds);
+      return { success: true, medications: currentMeds, error: null };
+    }
+
+    console.log('✅ Patient medications updated via RPC:', currentMeds);
+    return { success: true, medications: currentMeds, error: null };
+  } catch (err) {
+    console.error('Exception updating patient medications:', err);
+    return { success: false, medications: null, error: err };
   }
 };
 

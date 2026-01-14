@@ -482,12 +482,34 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                     <td className="p-4">
                       <div className="max-w-[200px]">
                         {(() => {
-                          // Get diagnoses from consultation if available, otherwise fall back to patient comorbidities
+                          // Get diagnoses from consultation if available
                           const consultation = patientConsultations[patient.nsn];
                           const consultDiagnoses = consultation?.diagnoses || [];
-                          const displayDiagnoses = consultDiagnoses.length > 0
-                            ? consultDiagnoses.map(d => typeof d === 'object' ? d.name : d)
-                            : patient.diagnoses || [];
+
+                          let displayDiagnoses = [];
+
+                          if (consultDiagnoses.length > 0) {
+                            // 1. Try to filter by the latest recordedAt timestamp
+                            const timestamps = consultDiagnoses
+                              .map(d => d.recordedAt)
+                              .filter(Boolean);
+
+                            if (timestamps.length > 0) {
+                              const latestTime = timestamps.sort().reverse()[0];
+                              displayDiagnoses = consultDiagnoses
+                                .filter(d => d.recordedAt === latestTime)
+                                .map(d => typeof d === 'object' ? d.name : d);
+                            } else {
+                              // 2. Fallback for older data: Only show the VERY LAST item in the array
+                              // as it's the most likely "latest" one.
+                              const lastDx = consultDiagnoses[consultDiagnoses.length - 1];
+                              displayDiagnoses = [typeof lastDx === 'object' ? lastDx.name : lastDx];
+                            }
+                          } else {
+                            // 3. Fall back to patient comorbidities if no consultation found
+                            // Show only the first 2 to keep table clean
+                            displayDiagnoses = (patient.diagnoses || []).slice(0, 2);
+                          }
 
                           return displayDiagnoses.length > 0 ? (
                             displayDiagnoses.map((dx, i) => (
@@ -568,16 +590,23 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                                 const MAX_VISIBLE = 3;
 
                                 if (consultDiagnoses.length > 0) {
-                                  const consultTime = consultation?.consultationTime
+                                  // Sort diagnoses by recordedAt descending (latest first)
+                                  const sortedDiagnoses = [...consultDiagnoses].sort((a, b) => {
+                                    const dateA = a.recordedAt ? new Date(a.recordedAt) : new Date(0);
+                                    const dateB = b.recordedAt ? new Date(b.recordedAt) : new Date(0);
+                                    return dateB - dateA;
+                                  });
+
+                                  const consultTimeFormatted = consultation?.consultationTime
                                     ? new Date(consultation.consultationTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
                                     : null;
-                                  const hasMore = consultDiagnoses.length > MAX_VISIBLE;
+                                  const hasMore = sortedDiagnoses.length > MAX_VISIBLE;
 
                                   return (
                                     <div>
                                       {/* Scrollable container with max height */}
                                       <div className={`space-y-2 ${hasMore ? 'max-h-48 overflow-y-auto pr-2' : ''}`} style={hasMore ? { scrollbarWidth: 'thin' } : {}}>
-                                        {consultDiagnoses.map((dx, i) => (
+                                        {sortedDiagnoses.map((dx, i) => (
                                           <div key={dx.id || i} className={`p-2 rounded-lg ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
                                             <div className="flex items-start justify-between">
                                               <div>
@@ -590,11 +619,25 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                                                   </p>
                                                 )}
                                               </div>
-                                              {consultTime && (
-                                                <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                                                  {consultTime}
-                                                </span>
-                                              )}
+                                              {(() => {
+                                                // Use recordedAt if available, otherwise fallback to consultationTime
+                                                const dateObj = dx.recordedAt ? new Date(dx.recordedAt) : (consultation?.consultationTime ? new Date(consultation.consultationTime) : null);
+                                                const dateToDisplay = dateObj ? dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : null;
+                                                const timeToDisplay = dateObj ? dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : null;
+
+                                                return dateToDisplay && (
+                                                  <div className="text-right">
+                                                    <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                                                      {dateToDisplay}
+                                                    </p>
+                                                    {timeToDisplay && (
+                                                      <p className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+                                                        {timeToDisplay}
+                                                      </p>
+                                                    )}
+                                                  </div>
+                                                );
+                                              })()}
                                             </div>
                                           </div>
                                         ))}
@@ -602,7 +645,7 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                                       {/* Show count indicator if scrollable */}
                                       {hasMore && (
                                         <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                                          Showing all {consultDiagnoses.length} diagnoses (scroll to view)
+                                          Showing all {sortedDiagnoses.length} diagnoses (scroll to view)
                                         </p>
                                       )}
                                     </div>
