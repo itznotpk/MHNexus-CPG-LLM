@@ -133,6 +133,26 @@ export function VitalsLineChart({ data, metrics, height = 300 }) {
                         />
                     ))}
 
+                    {/* Y-axis labels - show actual data range */}
+                    {metrics.length > 0 && activeMetrics[metrics[0].key] && (() => {
+                        const range = getMetricRange(metrics[0].key);
+                        const labels = [0, 1, 2, 3, 4].map(i => {
+                            const value = range.max - (i * (range.max - range.min) / 4);
+                            return Math.round(value);
+                        });
+                        return labels.map((val, i) => (
+                            <text
+                                key={i}
+                                x={padding.left - 10}
+                                y={padding.top + (i * chartHeight / 4) + 4}
+                                textAnchor="end"
+                                className={`text-xs ${isDark ? 'fill-slate-400' : 'fill-slate-500'}`}
+                            >
+                                {val}
+                            </text>
+                        ));
+                    })()}
+
                     {/* X-axis labels */}
                     {data.map((d, i) => (
                         <text

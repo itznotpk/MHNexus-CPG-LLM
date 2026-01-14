@@ -11,12 +11,11 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application built wit
 
 ## 🌟 Features
 
-**Latest Update (2026-01-11):**
-- **My Patients Dropdown Details**: Click the dropdown arrow on any patient to view full details (NRIC, Age, Gender, Race, Ethnicity, Allergies, Diagnoses, Medications, Vital Signs) inline.
-- **Removed Actions Column**: Actions column removed from My Patients table - View Chart is now accessible via the dropdown details.
-- **Welcome Greeting**: Home page greeting changed from time-based "Good Morning/Afternoon/Evening" to "Welcome".
-- **Logo Update**: Updated sidebar logo to use MHNexus.png.
-- **Data Type Safety**: Fixed handling of database fields (allergies, diagnoses, medications) that may be stored as strings or arrays.
+**Latest Update (2026-01-14):**
+- **ICD-11 Update**: Changed all diagnosis codes from ICD-10 to ICD-11 throughout the application.
+- **Vitals Chart Y-Axis Labels**: Added Y-axis labels that display actual data range (min to max) instead of starting from 0.
+- **Patient Chart Stats Fix**: Fixed Min/Max/Average display to show actual data values instead of defaulting to 0.
+- **Consultation UI Improvement**: "Analyze Clinical Assessment" button now hidden on initial NRIC search screen.
 - See [CHANGELOG.md](CHANGELOG.md) for details.
 
 ### 🏠 Sidebar Navigation & Dashboard
@@ -329,5 +328,5 @@ Proprietary - MHNexus Healthcare Solutions
 
 For a full list of changes, see [CHANGELOG.md](CHANGELOG.md).
 
-**Version**: 1.3.0 (My Patients Dropdown Details & UI Improvements, Jan 2026)
-**Last Updated**: January 11, 2026
+**Version**: 1.4.0 (ICD-11 Update & Chart Improvements, Jan 2026)
+**Last Updated**: January 14, 2026

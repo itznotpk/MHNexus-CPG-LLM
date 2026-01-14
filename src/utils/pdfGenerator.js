@@ -100,7 +100,7 @@ export function generateCarePlanPDF({ patient, diagnosis, carePlan }) {
   addSectionHeader('PRIMARY DIAGNOSIS');
 
   addText('Diagnosis', selectedDiagnosis?.name);
-  addText('ICD-10 Code', selectedDiagnosis?.icdCode);
+  addText('ICD-11 Code', selectedDiagnosis?.icdCode);
   addText('Probability', `${selectedDiagnosis?.probability}%`);
   addText('Risk Level', selectedDiagnosis?.risk?.toUpperCase());
   yPos += 5;

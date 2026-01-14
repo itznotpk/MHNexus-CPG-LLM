@@ -232,7 +232,7 @@ export function OutputSection() {
                 variant="secondary"
                 size="md"
                 icon={Share2}
-                onClick={() => {}}
+                onClick={() => { }}
                 className="w-full"
               >
                 Share
@@ -250,11 +250,11 @@ export function OutputSection() {
                     {selectedDiagnosis?.name}
                   </p>
                   <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                    ICD-10: {selectedDiagnosis?.icdCode}
+                    ICD-11: {selectedDiagnosis?.icdCode}
                   </p>
                 </div>
-                <Badge 
-                  variant={selectedDiagnosis?.risk === 'high' ? 'danger' : selectedDiagnosis?.risk === 'medium' ? 'warning' : 'success'} 
+                <Badge
+                  variant={selectedDiagnosis?.risk === 'high' ? 'danger' : selectedDiagnosis?.risk === 'medium' ? 'warning' : 'success'}
                   size="md"
                 >
                   {selectedDiagnosis?.risk?.charAt(0).toUpperCase() + selectedDiagnosis?.risk?.slice(1)} Risk

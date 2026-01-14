@@ -759,20 +759,20 @@ export function DataInputSection({ onViewChart }) {
   };
 
   // Check if ALL vital signs fields are filled
-  const hasAllVitals = vitals.bpSystolic && vitals.bpDiastolic && vitals.hr && 
-                       vitals.temp && vitals.rr && vitals.spo2 && 
-                       vitals.weight && vitals.height;
+  const hasAllVitals = vitals.bpSystolic && vitals.bpDiastolic && vitals.hr &&
+    vitals.temp && vitals.rr && vitals.spo2 &&
+    vitals.weight && vitals.height;
   const hasClinicaNotes = clinicalNotes.trim().length > 0 && notesConfirmed;
-  
+
   // Check if any vitals are filled (for partial fill detection)
-  const hasAnyVitals = vitals.bpSystolic || vitals.bpDiastolic || vitals.hr || 
-                       vitals.temp || vitals.rr || vitals.spo2 || 
-                       vitals.weight || vitals.height;
+  const hasAnyVitals = vitals.bpSystolic || vitals.bpDiastolic || vitals.hr ||
+    vitals.temp || vitals.rr || vitals.spo2 ||
+    vitals.weight || vitals.height;
   const hasAnyClinicalNotes = clinicalNotes.trim().length > 0;
-  
+
   // Determine if completely blank vs partially filled
   const isCompletelyBlank = !hasAnyVitals && !hasAnyClinicalNotes;
-  
+
   // Get specific missing fields
   const getMissingVitalFields = () => {
     const missing = [];
@@ -785,7 +785,7 @@ export function DataInputSection({ onViewChart }) {
     if (!vitals.height) missing.push('Height');
     return missing;
   };
-  
+
   const getMissingClinicalFields = () => {
     const missing = [];
     if (!clinicalNotes.trim()) missing.push('Clinical Notes');
@@ -801,7 +801,7 @@ export function DataInputSection({ onViewChart }) {
       setShowValidationWarning(true);
       return;
     }
-    
+
     setShowValidationWarning(false);
     // Save vitals to history before proceeding
     // We only save if the patient was found (has a record in DB)
@@ -1022,18 +1022,20 @@ export function DataInputSection({ onViewChart }) {
         </div>
       )}
 
-      <div className="flex justify-center pt-4">
-        <Button
-          variant="primary"
-          size="xl"
-          icon={Stethoscope}
-          onClick={handleAnalyze}
-          glow={canAnalyze}
-          className="min-w-[300px]"
-        >
-          Analyze Clinical Assessment
-        </Button>
-      </div>
+      {mpisChecked && (
+        <div className="flex justify-center pt-4">
+          <Button
+            variant="primary"
+            size="xl"
+            icon={Stethoscope}
+            onClick={handleAnalyze}
+            glow={canAnalyze}
+            className="min-w-[300px]"
+          >
+            Analyze Clinical Assessment
+          </Button>
+        </div>
+      )}
 
       {/* Chart Modal */}
       <ChartModal

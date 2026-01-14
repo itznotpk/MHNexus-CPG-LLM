@@ -233,9 +233,9 @@ function PatientChart({ patient, onBack }) {
                         {currentTabConfig.metrics.map((metric) => {
                             const values = historyToDisplay.map(d => d[metric.key]).filter(v => v !== undefined && !isNaN(v));
                             const latest = latestVitals[metric.key];
-                            const min = values.length > 0 ? Math.min(...values) : 0;
-                            const max = values.length > 0 ? Math.max(...values) : 0;
-                            const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+                            const min = values.length > 0 ? Math.min(...values) : null;
+                            const max = values.length > 0 ? Math.max(...values) : null;
+                            const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : null;
 
                             return (
                                 <GlassCard key={metric.key} className="p-4">
@@ -246,25 +246,25 @@ function PatientChart({ patient, onBack }) {
                                         <div className="text-center">
                                             <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Latest</div>
                                             <div className="text-xl font-bold" style={{ color: metric.color }}>
-                                                {latest?.toFixed(metric.key === 'temp' ? 1 : 0) || '-'}
+                                                {latest != null ? latest.toFixed(metric.key === 'temp' ? 1 : 0) : '-'}
                                             </div>
                                         </div>
                                         <div className="text-center">
                                             <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Average</div>
                                             <div className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                                                {avg?.toFixed(metric.key === 'temp' ? 1 : 0) || '-'}
+                                                {avg != null ? avg.toFixed(metric.key === 'temp' ? 1 : 0) : '-'}
                                             </div>
                                         </div>
                                         <div className="text-center">
                                             <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Min</div>
                                             <div className="text-xl font-bold text-green-500">
-                                                {min?.toFixed(metric.key === 'temp' ? 1 : 0) || '-'}
+                                                {min != null ? min.toFixed(metric.key === 'temp' ? 1 : 0) : '-'}
                                             </div>
                                         </div>
                                         <div className="text-center">
                                             <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Max</div>
                                             <div className="text-xl font-bold text-red-500">
-                                                {max?.toFixed(metric.key === 'temp' ? 1 : 0) || '-'}
+                                                {max != null ? max.toFixed(metric.key === 'temp' ? 1 : 0) : '-'}
                                             </div>
                                         </div>
                                     </div>

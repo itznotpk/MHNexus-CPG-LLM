@@ -74,7 +74,7 @@ export function DiagnosisSection() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 mb-4">
-          <CodeBadge code={`ICD-10: ${selectedDiagnosis?.icdCode}`} />
+          <CodeBadge code={`ICD-11: ${selectedDiagnosis?.icdCode}`} />
           <RiskBadge risk={selectedDiagnosis?.risk || 'medium'} />
         </div>
 
@@ -110,24 +110,22 @@ export function DiagnosisSection() {
               <button
                 key={diff.id}
                 onClick={() => handleSelectDiagnosis(diff.id)}
-                className={`w-full text-left p-4 rounded-xl transition-all duration-200 border-2 ${
-                  isSelected
-                    ? isDark 
-                      ? 'bg-[var(--accent-primary)]/20 border-[var(--accent-primary)] shadow-md' 
-                      : 'bg-[var(--accent-primary)]/10 border-[var(--accent-primary)] shadow-md'
-                    : isDark
-                      ? 'bg-white/5 border-transparent hover:bg-white/10 hover:border-[var(--accent-primary)]/50'
-                      : 'bg-white/30 border-transparent hover:bg-white/50 hover:border-[var(--accent-primary)]/50'
-                }`}
+                className={`w-full text-left p-4 rounded-xl transition-all duration-200 border-2 ${isSelected
+                  ? isDark
+                    ? 'bg-[var(--accent-primary)]/20 border-[var(--accent-primary)] shadow-md'
+                    : 'bg-[var(--accent-primary)]/10 border-[var(--accent-primary)] shadow-md'
+                  : isDark
+                    ? 'bg-white/5 border-transparent hover:bg-white/10 hover:border-[var(--accent-primary)]/50'
+                    : 'bg-white/30 border-transparent hover:bg-white/50 hover:border-[var(--accent-primary)]/50'
+                  }`}
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-3">
                     <div
-                      className={`w-6 h-6 flex items-center justify-center rounded-full text-sm font-bold ${
-                        isSelected
-                          ? 'bg-[var(--accent-primary)] text-white'
-                          : isDark ? 'bg-[var(--accent-primary)]/30 text-slate-300' : 'bg-[var(--accent-primary)]/20 text-slate-700'
-                      }`}
+                      className={`w-6 h-6 flex items-center justify-center rounded-full text-sm font-bold ${isSelected
+                        ? 'bg-[var(--accent-primary)] text-white'
+                        : isDark ? 'bg-[var(--accent-primary)]/30 text-slate-300' : 'bg-[var(--accent-primary)]/20 text-slate-700'
+                        }`}
                     >
                       {isSelected ? <Check className="w-4 h-4" /> : idx + 1}
                     </div>
@@ -141,7 +139,7 @@ export function DiagnosisSection() {
                         )}
                       </div>
                       <div className="flex items-center gap-2 mt-1">
-                        <CodeBadge code={`ICD-10: ${diff.icdCode}`} />
+                        <CodeBadge code={`ICD-11: ${diff.icdCode}`} />
                       </div>
                     </div>
                   </div>
