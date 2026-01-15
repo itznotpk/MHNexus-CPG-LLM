@@ -12,14 +12,19 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application built wit
 ## 🌟 Features
 
 **Latest Update (2026-01-15):**
+- **Dynamic Diagnoses Sync**: Diagnoses displayed in My Patients now come exclusively from `consultations.diagnoses` database column with proper timestamps.
+- **Risk Level Sync**: Patient risk level is now dynamically calculated from selected differential diagnoses (highest risk wins) and synced to database.
+- **Patient Status Selection**: Doctors can now select patient status (Active, Follow-up, Discharged) in Care Plan step 3, synced to database.
+- **TCA Date Picker in Care Plan**: Next Review Date (TCA) picker moved from step 1 to step 3 (Follow-up section) for better workflow.
+- **Comorbidities Display**: Added separate Comorbidities field in patient details, correctly pulling from `patients.comorbidities`.
+- **RLS Bypass Functions**: Added SQL functions for status updates to bypass Row-Level Security for demo purposes.
+- See [CHANGELOG.md](CHANGELOG.md) for details.
+
+**Previous Updates:**
 - **Medication Sync**: Care plan recommendations (START, STOP, CHANGE) now automatically update the patient's record in the database.
 - **Historical Diagnoses with Timestamps**: Diagnoses now store specific `recordedAt` timestamps.
 - **Chronological Sorting**: Patient history now displays from latest to oldest with high-precision time (HH:mm).
-- **Table View Optimization**: Main table now only shows the most recent diagnosis group for a cleaner interface.
-- **Robust Data Handling**: Improved JSONB merging logic and fixed data corruption issues in Supabase integration.
-- **Improved Patient Detail Layout**: Reorganized the patient detail view with a 3-column grid for Vital Signs, Clinical Notes, and Medications.
 - **ICD-11 Update**: All diagnosis codes updated to ICD-11 throughout the application.
-- See [CHANGELOG.md](CHANGELOG.md) for details.
 
 ### 🏠 Sidebar Navigation & Dashboard
 
@@ -335,5 +340,5 @@ Proprietary - MHNexus Healthcare Solutions
 
 For a full list of changes, see [CHANGELOG.md](CHANGELOG.md).
 
-**Version**: 1.6.0 (Medication Sync & Chronological History, Jan 2026)
+**Version**: 1.7.0 (Dynamic Data Sync & Care Plan Workflow, Jan 2026)
 **Last Updated**: January 15, 2026

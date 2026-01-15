@@ -23,29 +23,70 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
--- Drop existing function
+-- Drop existing functions (all signatures)
 DROP FUNCTION IF EXISTS save_consultation_bypass(TEXT, TEXT);
 DROP FUNCTION IF EXISTS save_consultation_bypass(TEXT, TEXT, DATE);
+DROP FUNCTION IF EXISTS save_consultation_bypass(TEXT, TEXT, DATE, JSONB);
 
 -- Create SECURITY DEFINER function to bypass RLS (for demo purposes)
+-- This function APPENDS new diagnoses to existing ones (preserves original timestamps)
 CREATE OR REPLACE FUNCTION save_consultation_bypass(
     p_patient_nric TEXT,
     p_clinical_notes TEXT,
-    p_next_review DATE DEFAULT NULL
+    p_next_review DATE DEFAULT NULL,
+    p_diagnoses JSONB DEFAULT '[]'::JSONB
 )
 RETURNS JSON AS $$
 DECLARE
     result JSON;
+    existing_diagnoses JSONB;
+    merged_diagnoses JSONB;
+    existing_count INT;
+    new_count INT;
 BEGIN
     -- Validate NRIC format
     IF NOT is_valid_nric(p_patient_nric) THEN
         RAISE EXCEPTION 'Invalid NRIC format. Must be 12 digits (e.g., 580315081234) or with dashes (e.g., 580315-08-1234)';
     END IF;
 
+    -- Get existing diagnoses for this patient (if any)
+    SELECT COALESCE(diagnoses, '[]'::JSONB) INTO existing_diagnoses
+    FROM consultations
+    WHERE patient_nric = p_patient_nric;
+
+    -- If no existing record found, start with empty array
+    IF existing_diagnoses IS NULL THEN
+        existing_diagnoses := '[]'::JSONB;
+    END IF;
+
+    -- Get counts for debugging
+    existing_count := jsonb_array_length(existing_diagnoses);
+    new_count := jsonb_array_length(COALESCE(p_diagnoses, '[]'::JSONB));
+
+    -- Build merged array by combining existing (with their original timestamps) + new diagnoses
+    -- Using jsonb_agg to explicitly rebuild the array preserving all data
+    WITH existing_items AS (
+        SELECT jsonb_array_elements(existing_diagnoses) AS item
+    ),
+    new_items AS (
+        SELECT jsonb_array_elements(COALESCE(p_diagnoses, '[]'::JSONB)) AS item
+    ),
+    all_items AS (
+        SELECT item FROM existing_items
+        UNION ALL
+        SELECT item FROM new_items
+    )
+    SELECT COALESCE(jsonb_agg(item), '[]'::JSONB) INTO merged_diagnoses FROM all_items;
+
+    -- Log for debugging (visible in Supabase logs)
+    RAISE NOTICE 'Merging diagnoses: % existing + % new = % total', 
+        existing_count, new_count, jsonb_array_length(merged_diagnoses);
+
     INSERT INTO consultations (
         patient_nric, 
         clinical_notes, 
         next_review,
+        diagnoses,
         consultation_time,
         created_at,
         updated_at
@@ -54,6 +95,7 @@ BEGIN
         p_patient_nric, 
         p_clinical_notes, 
         p_next_review,
+        merged_diagnoses,
         NOW(),
         NOW(),
         NOW()
@@ -62,12 +104,15 @@ BEGIN
     DO UPDATE SET 
         clinical_notes = EXCLUDED.clinical_notes,
         next_review = EXCLUDED.next_review,
+        diagnoses = merged_diagnoses,
         consultation_time = NOW(),
         updated_at = NOW()
     RETURNING json_build_object(
         'patient_nric', patient_nric,
         'clinical_notes', clinical_notes,
         'next_review', next_review,
+        'diagnoses', diagnoses,
+        'diagnoses_count', jsonb_array_length(diagnoses),
         'consultation_time', consultation_time
     ) INTO result;
     
@@ -75,17 +120,76 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+
 -- Grant execute to everyone (including anon) for demo
-GRANT EXECUTE ON FUNCTION save_consultation_bypass(TEXT, TEXT, DATE) TO anon;
-GRANT EXECUTE ON FUNCTION save_consultation_bypass(TEXT, TEXT, DATE) TO authenticated;
+GRANT EXECUTE ON FUNCTION save_consultation_bypass(TEXT, TEXT, DATE, JSONB) TO anon;
+GRANT EXECUTE ON FUNCTION save_consultation_bypass(TEXT, TEXT, DATE, JSONB) TO authenticated;
 
 -- ============================================================================
 -- DONE! Consultations table now has:
 --   - patient_nric (PK)
 --   - clinical_notes
 --   - next_review (DATE)
+--   - diagnoses (JSONB array - ACCUMULATES across consultations)
 --   - consultation_time
 --   - created_by, updated_by, created_at, updated_at
 --
+-- DIAGNOSES FEATURE:
+--   - New diagnoses are APPENDED to existing ones (not replaced)
+--   - Each diagnosis has a recordedAt timestamp for date/time display
+--   - Sorted newest to oldest in the UI
+--
 -- RPC bypass function enabled for demo (no authentication required)
 -- ============================================================================
+
+-- ============================================================================
+-- UPDATE PATIENT STATUS BYPASS FUNCTION
+-- ============================================================================
+-- This function updates patient status bypassing RLS for demo purposes
+-- Drop existing function if exists
+DROP FUNCTION IF EXISTS update_patient_status_bypass(TEXT, TEXT);
+
+CREATE OR REPLACE FUNCTION update_patient_status_bypass(
+    p_patient_nric TEXT,
+    p_status TEXT
+)
+RETURNS JSON AS $$
+DECLARE
+    result JSON;
+BEGIN
+    -- Validate NRIC format
+    IF NOT is_valid_nric(p_patient_nric) THEN
+        RAISE EXCEPTION 'Invalid NRIC format';
+    END IF;
+
+    -- Validate status value
+    IF p_status NOT IN ('active', 'follow-up', 'discharged') THEN
+        RAISE EXCEPTION 'Invalid status. Must be: active, follow-up, or discharged';
+    END IF;
+
+    -- Update patient status
+    UPDATE patients
+    SET 
+        status = p_status::patient_status,
+        updated_at = NOW()
+    WHERE nric = p_patient_nric;
+
+    -- Check if update was successful
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Patient not found with NRIC: %', p_patient_nric;
+    END IF;
+
+    -- Return success
+    SELECT json_build_object(
+        'success', true,
+        'nric', p_patient_nric,
+        'status', p_status
+    ) INTO result;
+
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Grant execute permission to anon and authenticated roles
+GRANT EXECUTE ON FUNCTION update_patient_status_bypass(TEXT, TEXT) TO anon;
+GRANT EXECUTE ON FUNCTION update_patient_status_bypass(TEXT, TEXT) TO authenticated;

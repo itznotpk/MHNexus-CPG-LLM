@@ -209,17 +209,15 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
     fetchPatients();
   }, [fetchPatients]);
 
-  // Fetch consultations for all patients to display Next Review dates
+  // Fetch consultations for all patients to display Next Review dates and Diagnoses
+  // Always fetch fresh data to ensure sync with database
   useEffect(() => {
     const fetchAllConsultations = async () => {
       if (allPatients.length === 0) return;
 
-      // Fetch consultations for all patients in parallel
+      // Fetch consultations for all patients in parallel (always fresh, no cache)
       const results = await Promise.all(
         allPatients.map(async (patient) => {
-          if (patientConsultations[patient.nsn] !== undefined) {
-            return { nric: patient.nsn, consultation: patientConsultations[patient.nsn] };
-          }
           try {
             const result = await getPatientConsultation(patient.nsn);
             return { nric: patient.nsn, consultation: result.found ? result.consultation : null };
@@ -234,11 +232,12 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
       results.forEach(r => {
         newConsultations[r.nric] = r.consultation;
       });
-      setPatientConsultations(prev => ({ ...prev, ...newConsultations }));
+      setPatientConsultations(newConsultations); // Replace entire cache with fresh data
     };
 
     fetchAllConsultations();
   }, [allPatients]);
+
 
   // Debounce search - wait 300ms after user stops typing
   useEffect(() => {
@@ -279,6 +278,32 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
       hash = name.charCodeAt(i) + ((hash << 5) - hash);
     }
     return avatarColors[Math.abs(hash) % avatarColors.length];
+  };
+
+  // Refresh consultation data for a specific patient (for dynamic sync)
+  const refreshPatientConsultation = async (patientNric) => {
+    try {
+      const result = await getPatientConsultation(patientNric);
+      if (result.found) {
+        setPatientConsultations(prev => ({
+          ...prev,
+          [patientNric]: result.consultation
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to refresh consultation:', err);
+    }
+  };
+
+  // Handle patient row expansion - refresh data when expanding
+  const handlePatientExpand = (patient) => {
+    if (selectedPatient?.id === patient.id) {
+      setSelectedPatient(null); // Collapse
+    } else {
+      setSelectedPatient(patient); // Expand
+      // Refresh consultation data for this patient to ensure sync
+      refreshPatientConsultation(patient.nsn);
+    }
   };
 
   // Since we're fetching filtered data from Supabase, we just use patients directly
@@ -459,7 +484,7 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                     {/* Dropdown Toggle Button */}
                     <td className="p-4 w-12">
                       <button
-                        onClick={() => setSelectedPatient(selectedPatient?.id === patient.id ? null : patient)}
+                        onClick={() => handlePatientExpand(patient)}
                         className={`p-2 rounded-lg transition-all ${isDark ? 'hover:bg-white/10' : 'hover:bg-slate-200'}`}
                       >
                         <ChevronRight
@@ -482,7 +507,7 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                     <td className="p-4">
                       <div className="max-w-[200px]">
                         {(() => {
-                          // Get diagnoses from consultation if available
+                          // Get diagnoses ONLY from consultation (from consultations.diagnoses database column)
                           const consultation = patientConsultations[patient.nsn];
                           const consultDiagnoses = consultation?.diagnoses || [];
 
@@ -501,15 +526,11 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                                 .map(d => typeof d === 'object' ? d.name : d);
                             } else {
                               // 2. Fallback for older data: Only show the VERY LAST item in the array
-                              // as it's the most likely "latest" one.
                               const lastDx = consultDiagnoses[consultDiagnoses.length - 1];
                               displayDiagnoses = [typeof lastDx === 'object' ? lastDx.name : lastDx];
                             }
-                          } else {
-                            // 3. Fall back to patient comorbidities if no consultation found
-                            // Show only the first 2 to keep table clean
-                            displayDiagnoses = (patient.diagnoses || []).slice(0, 2);
                           }
+                          // No fallback to comorbidities - diagnoses come ONLY from consultations.diagnoses
 
                           return displayDiagnoses.length > 0 ? (
                             displayDiagnoses.map((dx, i) => (
@@ -518,7 +539,7 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                               </p>
                             ))
                           ) : (
-                            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>—</p>
+                            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No diagnoses</p>
                           );
                         })()}
                       </div>
@@ -568,12 +589,20 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                                 <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>Race</p>
                                 <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{patient.race || '—'}</p>
                               </div>
-                              <div className="col-span-2">
+                              <div>
                                 <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>Allergies</p>
                                 <p className={`font-medium ${patient.allergies ? 'text-red-500' : isDark ? 'text-white' : 'text-slate-800'}`}>
                                   {patient.allergies
                                     ? (Array.isArray(patient.allergies) ? patient.allergies.join(', ') : String(patient.allergies))
                                     : 'None known'}
+                                </p>
+                              </div>
+                              <div className="col-span-2">
+                                <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>Comorbidities</p>
+                                <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                                  {patient.comorbidities && patient.comorbidities.length > 0
+                                    ? (Array.isArray(patient.comorbidities) ? patient.comorbidities.join(', ') : String(patient.comorbidities))
+                                    : 'None recorded'}
                                 </p>
                               </div>
                             </div>
@@ -650,14 +679,8 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                                       )}
                                     </div>
                                   );
-                                } else if (patient.diagnoses && patient.diagnoses.length > 0) {
-                                  // Fall back to patient comorbidities
-                                  return (
-                                    <p className={`text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                                      {Array.isArray(patient.diagnoses) ? patient.diagnoses.join(', ') : String(patient.diagnoses)}
-                                    </p>
-                                  );
                                 } else {
+                                  // No fallback to comorbidities - diagnoses come ONLY from consultations.diagnoses
                                   return (
                                     <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                                       No diagnoses recorded

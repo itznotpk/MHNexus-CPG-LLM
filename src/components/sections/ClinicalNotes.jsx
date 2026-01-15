@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, CheckCircle2, Edit3, Loader2, Calendar, Zap } from 'lucide-react';
+import { FileText, CheckCircle2, Edit3, Loader2, Zap } from 'lucide-react';
 import { GlassCard, TextArea, Button, VoiceInputButton, VoiceStatusIndicator } from '../shared';
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -12,7 +12,6 @@ export function ClinicalNotes({ isConfirmed, onConfirm }) {
   const [isListening, setIsListening] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   const [saveError, setSaveError] = React.useState('');
-  const [nextReviewDate, setNextReviewDate] = React.useState('');
 
   const handleChange = (value) => {
     dispatch({ type: 'SET_CLINICAL_NOTES', payload: value });
@@ -42,7 +41,8 @@ export function ClinicalNotes({ isConfirmed, onConfirm }) {
     setSaveError('');
 
     try {
-      const result = await saveConsultation(patientNric, clinicalNotes, nextReviewDate || null);
+      // Save clinical notes only (TCA is now set in step 3)
+      const result = await saveConsultation(patientNric, clinicalNotes, null);
       if (result.success) {
         console.log('✅ Clinical notes saved to Supabase');
         if (onConfirm) onConfirm(true);
@@ -50,7 +50,7 @@ export function ClinicalNotes({ isConfirmed, onConfirm }) {
         // Show detailed error message
         const errorMsg = result.error?.message || result.error?.details || 'Unknown error';
         const errorCode = result.error?.code || '';
-        
+
         // Check for authentication/RLS error
         if (result.error?.isAuthError || errorCode === '42501') {
           setSaveError('Failed to save: Authentication required. Only authenticated users may insert or update consultations.');
@@ -130,30 +130,6 @@ export function ClinicalNotes({ isConfirmed, onConfirm }) {
         helper="Include relevant symptoms, duration, and examination findings. Voice dictation supported."
         disabled={isConfirmed || isSaving}
       />
-
-      {/* Next Review Date Picker */}
-      <div className="mt-4">
-        <label className={`flex items-center gap-2 text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-          <Calendar className="w-4 h-4 text-[var(--accent-primary)]" />
-          Next Review Date (TCA)
-        </label>
-        <input
-          type="date"
-          value={nextReviewDate}
-          onChange={(e) => setNextReviewDate(e.target.value)}
-          disabled={isConfirmed || isSaving}
-          min={new Date().toISOString().split('T')[0]}
-          className={`w-full sm:w-64 px-4 py-2.5 rounded-xl border transition-all
-            focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50
-            ${isDark 
-              ? 'bg-white/5 border-white/10 text-white' 
-              : 'bg-white border-slate-200 text-slate-800'}
-            ${isConfirmed || isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
-        />
-        <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-          Set the patient's next follow-up appointment date
-        </p>
-      </div>
 
       {/* Save Error Message */}
       {saveError && (

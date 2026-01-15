@@ -255,20 +255,91 @@ function MonitoringSection({ monitoring }) {
   );
 }
 
-// Follow-Up Section
+// Follow-Up Section with Patient Status and TCA Date Picker
 function FollowUpSection({ followUp }) {
   const { isDark } = useTheme();
+  const { state, dispatch } = useApp();
+  const currentStatus = state.patientStatus || 'active';
+  const nextReviewDate = state.nextReviewDate || '';
 
   if (!followUp) return null;
 
+  const statusOptions = [
+    { value: 'active', label: 'Active', color: 'emerald', icon: Check },
+    { value: 'follow-up', label: 'Follow-up', color: 'amber', icon: Calendar },
+    { value: 'discharged', label: 'Discharged', color: 'slate', icon: Shield },
+  ];
+
+  const handleStatusChange = (status) => {
+    dispatch({ type: 'SET_PATIENT_STATUS', payload: status });
+  };
+
+  const handleTCAChange = (date) => {
+    dispatch({ type: 'SET_NEXT_REVIEW_DATE', payload: date });
+  };
+
   return (
     <AccordionSection title="Follow-up" icon={Calendar}>
-      <div className={`p-4 rounded-xl ${isDark ? 'bg-[var(--accent-primary)]/20' : 'bg-[var(--accent-primary)]/10'}`}>
-        <div className="flex items-center gap-2 mb-2">
-          <Calendar className="w-5 h-5 text-[var(--accent-primary)]" />
-          <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Follow-up Appointment</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Next Review Date (TCA) Picker */}
+        <div className={`p-4 rounded-xl ${isDark ? 'bg-[var(--accent-primary)]/20' : 'bg-[var(--accent-primary)]/10'}`}>
+          <div className="flex items-center gap-2 mb-3">
+            <Calendar className="w-5 h-5 text-[var(--accent-primary)]" />
+            <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Next Review Date (TCA)</span>
+          </div>
+          <input
+            type="date"
+            value={nextReviewDate}
+            onChange={(e) => handleTCAChange(e.target.value)}
+            min={new Date().toISOString().split('T')[0]}
+            className={`w-full px-4 py-2.5 rounded-xl border transition-all
+              focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50
+              ${isDark
+                ? 'bg-white/10 border-white/20 text-white'
+                : 'bg-white border-slate-200 text-slate-800'}`}
+          />
+          <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+            Set the patient's next follow-up appointment
+          </p>
         </div>
-        <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>TCA: {followUp}</p>
+
+        {/* Patient Status Selection */}
+        <div className={`p-4 rounded-xl ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+          <div className="flex items-center gap-2 mb-3">
+            <Shield className="w-5 h-5 text-[var(--accent-primary)]" />
+            <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Patient Status</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {statusOptions.map((option) => {
+              const isSelected = currentStatus === option.value;
+              const Icon = option.icon;
+              const colorClasses = {
+                emerald: isSelected
+                  ? 'bg-emerald-500 text-white border-emerald-500'
+                  : `${isDark ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30' : 'bg-emerald-100 text-emerald-700 border-emerald-300 hover:bg-emerald-200'}`,
+                amber: isSelected
+                  ? 'bg-amber-500 text-white border-amber-500'
+                  : `${isDark ? 'bg-amber-500/20 text-amber-400 border-amber-500/30 hover:bg-amber-500/30' : 'bg-amber-100 text-amber-700 border-amber-300 hover:bg-amber-200'}`,
+                slate: isSelected
+                  ? 'bg-slate-500 text-white border-slate-500'
+                  : `${isDark ? 'bg-slate-500/20 text-slate-400 border-slate-500/30 hover:bg-slate-500/30' : 'bg-slate-200 text-slate-700 border-slate-300 hover:bg-slate-300'}`,
+              };
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => handleStatusChange(option.value)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border font-medium transition-all ${colorClasses[option.color]}`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+          <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+            Status and TCA will be synced when care plan is finalized
+          </p>
+        </div>
       </div>
     </AccordionSection>
   );
@@ -382,8 +453,8 @@ function CPGReferencesSection({ references }) {
           <button
             key={idx}
             className={`px-3 py-2 rounded-xl text-sm transition-colors text-left ${isDark
-                ? 'bg-[var(--accent-primary)]/20 hover:bg-[var(--accent-primary)]/30 text-slate-200'
-                : 'bg-[var(--accent-primary)]/10 hover:bg-[var(--accent-primary)]/20 text-slate-700'
+              ? 'bg-[var(--accent-primary)]/20 hover:bg-[var(--accent-primary)]/30 text-slate-200'
+              : 'bg-[var(--accent-primary)]/10 hover:bg-[var(--accent-primary)]/20 text-slate-700'
               }`}
           >
             <span className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{ref.title}</span>

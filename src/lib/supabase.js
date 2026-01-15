@@ -383,6 +383,68 @@ export const updatePatientMedications = async (nric, medications) => {
 };
 
 /**
+ * Update patient risk level based on selected diagnoses
+ * @param {string} nric - Patient's NRIC
+ * @param {string} riskLevel - Risk level to set (critical, high, moderate, low)
+ * @returns {Promise<{success: boolean, error: Error|null}>}
+ */
+export const updatePatientRiskLevel = async (nric, riskLevel) => {
+  try {
+    console.log('🎯 Updating risk level for patient:', nric, 'to:', riskLevel);
+
+    const { data, error } = await supabase
+      .from('patients')
+      .update({
+        risk_level: riskLevel,
+        updated_at: new Date().toISOString()
+      })
+      .eq('nric', nric);
+
+    if (error) {
+      console.error('Error updating patient risk level:', error);
+      return { success: false, error };
+    }
+
+    console.log('✅ Patient risk level updated to:', riskLevel);
+    return { success: true, error: null };
+  } catch (err) {
+    console.error('Exception updating patient risk level:', err);
+    return { success: false, error: err };
+  }
+};
+
+/**
+ * Update patient status (active, follow-up, discharged)
+ * Uses RPC function to bypass RLS for demo purposes
+ * @param {string} nric - Patient's NRIC
+ * @param {string} status - Status to set (active, follow-up, discharged)
+ * @returns {Promise<{success: boolean, error: Error|null}>}
+ */
+export const updatePatientStatus = async (nric, status) => {
+  try {
+    console.log('📋 Updating status for patient:', nric, 'to:', status);
+
+    // Use RPC function to bypass RLS
+    const { data, error } = await supabase
+      .rpc('update_patient_status_bypass', {
+        p_patient_nric: nric,
+        p_status: status
+      });
+
+    if (error) {
+      console.error('Error updating patient status:', error);
+      return { success: false, error };
+    }
+
+    console.log('✅ Patient status updated to:', status, data);
+    return { success: true, error: null };
+  } catch (err) {
+    console.error('Exception updating patient status:', err);
+    return { success: false, error: err };
+  }
+};
+
+/**
  * Get all patients (for My Patients page)
  * @param {Object} options - Query options
  * @returns {Promise<{patients: Array, error: Error|null}>}
@@ -435,8 +497,7 @@ export const getAllPatients = async (options = {}) => {
       status: p.status || 'active',
       mpisSyncedAt: p.mpis_synced_at,
       updatedAt: p.updated_at,
-      // UI-required fields with defaults
-      diagnoses: p.comorbidities || [], // Use comorbidities as diagnoses
+      // UI-required fields with defaults (diagnoses come from consultations table, not here)
       lastVisit: p.updated_at ? new Date(p.updated_at).toISOString().split('T')[0] : null,
       nextReview: null, // Not in DB yet
       tcaDays: null, // Not in DB yet

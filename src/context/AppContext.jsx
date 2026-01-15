@@ -3,7 +3,7 @@ import {
   sampleDiagnosis,
   sampleCarePlan,
 } from '../data/sampleData';
-import { searchPatientByNRIC, savePatientVitals, isSupabaseConfigured, saveConsultation, updatePatientMedications } from '../lib/supabase';
+import { searchPatientByNRIC, savePatientVitals, isSupabaseConfigured, saveConsultation, updatePatientMedications, updatePatientRiskLevel, updatePatientStatus } from '../lib/supabase';
 
 // Always use Supabase for patient data
 const USE_SUPABASE = isSupabaseConfigured();
@@ -39,6 +39,8 @@ const initialState = {
     currentMeds: [],
   },
   mpisSynced: false,
+  nextReviewDate: '', // TCA date from step 1
+  patientStatus: 'active', // Patient status from step 3 (active, follow-up, discharged)
   diagnosis: null,
   carePlan: null,
   isAnalyzing: false,
@@ -51,6 +53,10 @@ function appReducer(state, action) {
       return { ...state, patient: { ...state.patient, ...action.payload } };
     case 'SET_CLINICAL_NOTES':
       return { ...state, clinicalNotes: action.payload };
+    case 'SET_NEXT_REVIEW_DATE':
+      return { ...state, nextReviewDate: action.payload };
+    case 'SET_PATIENT_STATUS':
+      return { ...state, patientStatus: action.payload };
     case 'SET_VITALS':
       return { ...state, vitals: { ...state.vitals, ...action.payload } };
     case 'SET_MPIS_DATA':
@@ -186,12 +192,16 @@ export function AppProvider({ children }) {
       (d) => selectedIds.includes(d.id)
     ) || [];
 
-    // Save to database - include diagnoses, clinical notes, and default follow-up
+    // Save to database - include diagnoses, clinical notes, and TCA date from step 1
     if (USE_SUPABASE && state.patient.nsn) {
       try {
-        const nextReview = new Date();
-        nextReview.setDate(nextReview.getDate() + 28); // Default 4 weeks follow-up
-        const nextReviewStr = nextReview.toISOString().split('T')[0];
+        // Use nextReviewDate from step 1 (user-selected TCA), or default to 4 weeks
+        let nextReviewStr = state.nextReviewDate;
+        if (!nextReviewStr) {
+          const nextReview = new Date();
+          nextReview.setDate(nextReview.getDate() + 28); // Default 4 weeks follow-up
+          nextReviewStr = nextReview.toISOString().split('T')[0];
+        }
 
         // Format diagnoses for storage with current timestamp
         const now = new Date().toISOString();
@@ -215,6 +225,31 @@ export function AppProvider({ children }) {
           console.log('✅ Diagnoses saved to database:', diagnosesForDB);
         } else {
           console.warn('⚠️ Failed to save diagnoses:', result.error);
+        }
+
+        // Calculate highest risk level from selected diagnoses
+        // Risk priority: critical > high > moderate > low
+        const riskPriority = { critical: 4, high: 3, moderate: 2, medium: 2, low: 1 };
+        let highestRisk = 'low';
+        let highestPriority = 0;
+
+        selectedDiagnoses.forEach(d => {
+          const risk = (d.risk || 'low').toLowerCase();
+          const priority = riskPriority[risk] || 1;
+          if (priority > highestPriority) {
+            highestPriority = priority;
+            highestRisk = risk === 'medium' ? 'moderate' : risk; // Normalize 'medium' to 'moderate'
+          }
+        });
+
+        console.log('🎯 Highest risk from diagnoses:', highestRisk, 'from', selectedDiagnoses.map(d => d.risk));
+
+        // Update patient's risk level in database
+        const riskResult = await updatePatientRiskLevel(state.patient.nsn, highestRisk);
+        if (riskResult.success) {
+          console.log('✅ Patient risk level updated to:', highestRisk);
+        } else {
+          console.warn('⚠️ Failed to update risk level:', riskResult.error);
         }
       } catch (err) {
         console.error('Error saving diagnoses to DB:', err);
@@ -260,6 +295,41 @@ export function AppProvider({ children }) {
         nsn: state.patient.nsn,
         hasMeds: !!state.carePlan?.medications
       });
+    }
+
+    // Sync patient status to database
+    if (USE_SUPABASE && state.patient.nsn && state.patientStatus) {
+      try {
+        console.log('📋 Syncing patient status to DB:', state.patientStatus);
+        const statusResult = await updatePatientStatus(state.patient.nsn, state.patientStatus);
+        if (statusResult.success) {
+          console.log('✅ Patient status synced:', state.patientStatus);
+        } else {
+          console.error('❌ Failed to sync status:', statusResult.error);
+        }
+      } catch (err) {
+        console.error('💥 Exception during status sync:', err);
+      }
+    }
+
+    // Sync TCA (next review date) to database via saveConsultation
+    if (USE_SUPABASE && state.patient.nsn && state.nextReviewDate) {
+      try {
+        console.log('📅 Syncing TCA date to DB:', state.nextReviewDate);
+        const tcaResult = await saveConsultation(
+          state.patient.nsn,
+          state.clinicalNotes || '',
+          state.nextReviewDate,
+          [] // No new diagnoses, just updating TCA
+        );
+        if (tcaResult.success) {
+          console.log('✅ TCA synced:', state.nextReviewDate);
+        } else {
+          console.error('❌ Failed to sync TCA:', tcaResult.error);
+        }
+      } catch (err) {
+        console.error('💥 Exception during TCA sync:', err);
+      }
     }
 
     dispatch({ type: 'SET_STEP', payload: 4 });
