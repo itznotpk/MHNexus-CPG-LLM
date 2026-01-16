@@ -586,9 +586,17 @@ export const updateProfile = async (updates) => {
  * @param {string} clinicalNotes - Clinical notes text
  * @param {string|null} nextReview - Next review date (YYYY-MM-DD format)
  * @param {Array|null} diagnoses - Array of selected diagnoses objects
+ * @param {string|null} carePlanSummary - Care plan summary text
+ * @param {Object|null} medicationRecommendations - Medication recommendations
+ * @param {Array|null} interventions - Interventions & Procedures array
+ * @param {Array|null} monitoring - Monitoring & Testing array
+ * @param {Array|null} patientEducation - Patient Education array
+ * @param {Array|null} referrals - Referrals array
+ * @param {Array|null} lifestyleGoals - Lifestyle Goals array
+ * @param {Array|null} cpgReferences - CPG References array
  * @returns {Promise<{success: boolean, data: Object|null, error: Error|null}>}
  */
-export const saveConsultation = async (patientNric, clinicalNotes, nextReview = null, diagnoses = []) => {
+export const saveConsultation = async (patientNric, clinicalNotes, nextReview = null, diagnoses = [], carePlanSummary = null, medicationRecommendations = null, interventions = null, monitoring = null, patientEducation = null, referrals = null, lifestyleGoals = null, cpgReferences = null) => {
   try {
     // Use RPC function with SECURITY DEFINER to bypass RLS
     const { data, error } = await supabase
@@ -596,7 +604,15 @@ export const saveConsultation = async (patientNric, clinicalNotes, nextReview = 
         p_patient_nric: patientNric,
         p_clinical_notes: clinicalNotes,
         p_next_review: nextReview,
-        p_diagnoses: diagnoses
+        p_diagnoses: diagnoses,
+        p_care_plan_summary: carePlanSummary,
+        p_medication_recommendations: medicationRecommendations,
+        p_interventions: interventions,
+        p_monitoring: monitoring,
+        p_patient_education: patientEducation,
+        p_referrals: referrals,
+        p_lifestyle_goals: lifestyleGoals,
+        p_cpg_references: cpgReferences
       });
 
     if (error) {

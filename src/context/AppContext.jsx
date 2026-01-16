@@ -4,6 +4,7 @@ import {
   sampleCarePlan,
 } from '../data/sampleData';
 import { searchPatientByNRIC, savePatientVitals, isSupabaseConfigured, saveConsultation, updatePatientMedications, updatePatientRiskLevel, updatePatientStatus } from '../lib/supabase';
+import { getNowUTC8, getTodayUTC8 } from '../utils/timezone';
 
 // Always use Supabase for patient data
 const USE_SUPABASE = isSupabaseConfigured();
@@ -203,8 +204,8 @@ export function AppProvider({ children }) {
           nextReviewStr = nextReview.toISOString().split('T')[0];
         }
 
-        // Format diagnoses for storage with current timestamp
-        const now = new Date().toISOString();
+        // Format diagnoses for storage with current timestamp (UTC+08:00)
+        const now = getNowUTC8();
         const diagnosesForDB = selectedDiagnoses.map(d => ({
           id: d.id,
           name: d.name,
@@ -312,23 +313,39 @@ export function AppProvider({ children }) {
       }
     }
 
-    // Sync TCA (next review date) to database via saveConsultation
-    if (USE_SUPABASE && state.patient.nsn && state.nextReviewDate) {
+    // Sync all Care Plan data to database
+    if (USE_SUPABASE && state.patient.nsn) {
       try {
-        console.log('📅 Syncing TCA date to DB:', state.nextReviewDate);
+        const carePlanSummary = state.carePlan?.clinicalSummary || state.carePlan?.summary || null;
+        const medicationRecommendations = state.carePlan?.medications || null;
+        const interventions = state.carePlan?.interventions || null;
+        const monitoring = state.carePlan?.monitoring || null;
+        const patientEducation = state.carePlan?.disposition?.patientEducation || null;
+        const referrals = state.carePlan?.disposition?.referrals || null;
+        const lifestyleGoals = state.carePlan?.lifestyle || null;
+        const cpgReferences = state.carePlan?.cpgReferences || null;
+        console.log('📅 Syncing Care Plan data to DB');
         const tcaResult = await saveConsultation(
           state.patient.nsn,
           state.clinicalNotes || '',
-          state.nextReviewDate,
-          [] // No new diagnoses, just updating TCA
+          state.nextReviewDate || null,
+          [],
+          carePlanSummary,
+          medicationRecommendations,
+          interventions,
+          monitoring,
+          patientEducation,
+          referrals,
+          lifestyleGoals,
+          cpgReferences
         );
         if (tcaResult.success) {
-          console.log('✅ TCA synced:', state.nextReviewDate);
+          console.log('✅ Care Plan data synced');
         } else {
-          console.error('❌ Failed to sync TCA:', tcaResult.error);
+          console.error('❌ Failed to sync:', tcaResult.error);
         }
       } catch (err) {
-        console.error('💥 Exception during TCA sync:', err);
+        console.error('💥 Exception during sync:', err);
       }
     }
 

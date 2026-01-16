@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { formatDateUTC8 } from '../../utils/timezone';
 import {
   Search,
   Filter,
@@ -651,8 +652,9 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
                                               {(() => {
                                                 // Use recordedAt if available, otherwise fallback to consultationTime
                                                 const dateObj = dx.recordedAt ? new Date(dx.recordedAt) : (consultation?.consultationTime ? new Date(consultation.consultationTime) : null);
-                                                const dateToDisplay = dateObj ? dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : null;
-                                                const timeToDisplay = dateObj ? dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : null;
+                                                // Format with UTC+08:00 timezone
+                                                const dateToDisplay = dateObj ? dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Singapore' }) : null;
+                                                const timeToDisplay = dateObj ? dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Singapore' }) : null;
 
                                                 return dateToDisplay && (
                                                   <div className="text-right">

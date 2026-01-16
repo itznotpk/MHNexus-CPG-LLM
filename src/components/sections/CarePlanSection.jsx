@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getTodayUTC8 } from '../../utils/timezone';
 import {
   ClipboardList,
   Stethoscope,
@@ -291,7 +292,7 @@ function FollowUpSection({ followUp }) {
             type="date"
             value={nextReviewDate}
             onChange={(e) => handleTCAChange(e.target.value)}
-            min={new Date().toISOString().split('T')[0]}
+            min={getTodayUTC8()}
             className={`w-full px-4 py-2.5 rounded-xl border transition-all
               focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50
               ${isDark

@@ -23,7 +23,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { generateCarePlanPDF } from '../../utils/pdfGenerator';
 
 // Summary Sidebar Component
-function PlanSummary({ carePlan, patient }) {
+function PlanSummary({ carePlan, patient, nextReviewDate }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const { isDark } = useTheme();
 
@@ -126,7 +126,7 @@ function PlanSummary({ carePlan, patient }) {
             <div className="flex items-center gap-2">
               <Calendar className={`w-4 h-4 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
               <span className={`font-medium ${isDark ? 'text-blue-300' : 'text-blue-800'}`}>
-                Follow-up: {carePlan.disposition.followUp}
+                Follow-up: {nextReviewDate || carePlan.disposition.followUp}
               </span>
             </div>
           </div>
@@ -140,7 +140,7 @@ function PlanSummary({ carePlan, patient }) {
 export function OutputSection() {
   const { state, resetApp, goToStep } = useApp();
   const { isDark } = useTheme();
-  const { patient, carePlan, diagnosis } = state;
+  const { patient, carePlan, diagnosis, nextReviewDate } = state;
   const [showPrintPreview, setShowPrintPreview] = useState(false);
 
   // Get the selected diagnoses from the differentials array (supports multiple selection)
@@ -300,7 +300,7 @@ export function OutputSection() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <PlanSummary carePlan={carePlan} patient={patient} />
+          <PlanSummary carePlan={carePlan} patient={patient} nextReviewDate={nextReviewDate} />
 
           {/* New Assessment Button */}
           <Button

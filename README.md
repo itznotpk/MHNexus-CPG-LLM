@@ -11,20 +11,19 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application built wit
 
 ## 🌟 Features
 
-**Latest Update (2026-01-15):**
-- **Dynamic Diagnoses Sync**: Diagnoses displayed in My Patients now come exclusively from `consultations.diagnoses` database column with proper timestamps.
-- **Risk Level Sync**: Patient risk level is now dynamically calculated from selected differential diagnoses (highest risk wins) and synced to database.
-- **Patient Status Selection**: Doctors can now select patient status (Active, Follow-up, Discharged) in Care Plan step 3, synced to database.
-- **TCA Date Picker in Care Plan**: Next Review Date (TCA) picker moved from step 1 to step 3 (Follow-up section) for better workflow.
-- **Comorbidities Display**: Added separate Comorbidities field in patient details, correctly pulling from `patients.comorbidities`.
-- **RLS Bypass Functions**: Added SQL functions for status updates to bypass Row-Level Security for demo purposes.
-- See [CHANGELOG.md](CHANGELOG.md) for details.
+**Latest Update (2026-01-16):**
+- **Complete Care Plan Sync**: All Step 3 Care Plan data now syncs to database:
+  - Clinical Summary, Medication Recommendations, Interventions & Procedures
+  - Monitoring & Testing, Patient Education, Referrals
+  - Lifestyle Goals, CPG References
+- **Dynamic Follow-up Display**: Step 4 Plan Summary now shows actual TCA date from database
+- **Timezone Fix**: All timestamps now display correctly in UTC+08:00 (Malaysia/Singapore)
 
-**Previous Updates:**
-- **Medication Sync**: Care plan recommendations (START, STOP, CHANGE) now automatically update the patient's record in the database.
-- **Historical Diagnoses with Timestamps**: Diagnoses now store specific `recordedAt` timestamps.
-- **Chronological Sorting**: Patient history now displays from latest to oldest with high-precision time (HH:mm).
-- **ICD-11 Update**: All diagnosis codes updated to ICD-11 throughout the application.
+**Previous Update (2026-01-15):**
+- **Dynamic Diagnoses Sync**: Diagnoses from `consultations.diagnoses` with timestamps
+- **Risk Level Sync**: Patient risk calculated from diagnoses and synced to DB
+- **Patient Status Selection**: Status selection in Care Plan step 3
+- **TCA Date Picker**: Moved to step 3 Follow-up section
 
 ### 🏠 Sidebar Navigation & Dashboard
 
