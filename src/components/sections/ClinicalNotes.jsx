@@ -1,17 +1,14 @@
 import React from 'react';
-import { FileText, CheckCircle2, Edit3, Loader2, Zap } from 'lucide-react';
+import { FileText, CheckCircle2, Edit3, Zap } from 'lucide-react';
 import { GlassCard, TextArea, Button, VoiceInputButton, VoiceStatusIndicator } from '../shared';
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
-import { saveConsultation } from '../../lib/supabase';
 
 export function ClinicalNotes({ isConfirmed, onConfirm }) {
   const { state, dispatch } = useApp();
   const { isDark } = useTheme();
   const { clinicalNotes, patient } = state;
   const [isListening, setIsListening] = React.useState(false);
-  const [isSaving, setIsSaving] = React.useState(false);
-  const [saveError, setSaveError] = React.useState('');
 
   const handleChange = (value) => {
     dispatch({ type: 'SET_CLINICAL_NOTES', payload: value });
@@ -29,46 +26,10 @@ export function ClinicalNotes({ isConfirmed, onConfirm }) {
     handleChange(newValue);
   };
 
-  const handleConfirm = async () => {
-    // Get patient NRIC
-    const patientNric = patient?.nsn;
-    if (!patientNric) {
-      setSaveError('No patient selected. Please search for a patient first.');
-      return;
-    }
-
-    setIsSaving(true);
-    setSaveError('');
-
-    try {
-      // Save clinical notes only (TCA is now set in step 3)
-      const result = await saveConsultation(patientNric, clinicalNotes, null);
-      if (result.success) {
-        console.log('✅ Clinical notes saved to Supabase');
-        if (onConfirm) onConfirm(true);
-      } else {
-        // Show detailed error message
-        const errorMsg = result.error?.message || result.error?.details || 'Unknown error';
-        const errorCode = result.error?.code || '';
-
-        // Check for authentication/RLS error
-        if (result.error?.isAuthError || errorCode === '42501') {
-          setSaveError('Failed to save: Authentication required. Only authenticated users may insert or update consultations.');
-        } else if (errorCode === '23503') {
-          setSaveError('Patient must be registered before saving clinical notes.');
-        } else if (errorCode === '42P01') {
-          setSaveError('Consultations table not found. Please run the SQL schema.');
-        } else {
-          setSaveError(`Failed to save: ${errorMsg}`);
-        }
-        console.error('Save error:', result.error);
-      }
-    } catch (err) {
-      setSaveError(`Error: ${err.message || 'An error occurred while saving.'}`);
-      console.error('Exception:', err);
-    } finally {
-      setIsSaving(false);
-    }
+  const handleConfirm = () => {
+    // Just confirm the notes locally - actual save happens when "Analyze Clinical Assessment" is pressed
+    // This creates a new consultation row in the database with the clinical notes
+    if (onConfirm) onConfirm(true);
   };
 
   const handleEdit = () => {
@@ -128,15 +89,8 @@ export function ClinicalNotes({ isConfirmed, onConfirm }) {
         value={clinicalNotes}
         onChange={(e) => handleChange(e.target.value)}
         helper="Include relevant symptoms, duration, and examination findings. Voice dictation supported."
-        disabled={isConfirmed || isSaving}
+        disabled={isConfirmed}
       />
-
-      {/* Save Error Message */}
-      {saveError && (
-        <div className="mt-2 p-2 rounded-lg bg-red-500/20 border border-red-500/30">
-          <p className="text-sm text-red-500">{saveError}</p>
-        </div>
-      )}
 
       {/* Confirm/Edit Button */}
       <div className="mt-4 flex justify-end">
@@ -153,12 +107,11 @@ export function ClinicalNotes({ isConfirmed, onConfirm }) {
           <Button
             variant="success"
             size="md"
-            icon={isSaving ? Loader2 : CheckCircle2}
+            icon={CheckCircle2}
             onClick={handleConfirm}
-            disabled={!clinicalNotes?.trim() || isSaving}
-            loading={isSaving}
+            disabled={!clinicalNotes?.trim()}
           >
-            {isSaving ? 'Saving...' : 'Confirm Clinical Notes'}
+            Confirm Clinical Notes
           </Button>
         )}
       </div>

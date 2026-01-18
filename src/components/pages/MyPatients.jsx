@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { GlassCard } from '../shared/GlassCard';
 import { useTheme } from '../../context/ThemeContext';
-import { getAllPatients, getPatientConsultation } from '../../lib/supabase';
+import { getAllPatients, getPatientConsultation, getAllPatientConsultations } from '../../lib/supabase';
 
 // Helper component to display next review date from consultations
 function NextReviewDisplay({ patientNric, consultations, isDark, accent }) {
@@ -210,18 +210,43 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
     fetchPatients();
   }, [fetchPatients]);
 
-  // Fetch consultations for all patients to display Next Review dates and Diagnoses
+  // Fetch ALL consultations for all patients to display Next Review dates and ALL Diagnoses
   // Always fetch fresh data to ensure sync with database
   useEffect(() => {
     const fetchAllConsultations = async () => {
       if (allPatients.length === 0) return;
 
-      // Fetch consultations for all patients in parallel (always fresh, no cache)
+      // Fetch ALL consultations for all patients in parallel (not just the latest)
       const results = await Promise.all(
         allPatients.map(async (patient) => {
           try {
-            const result = await getPatientConsultation(patient.nsn);
-            return { nric: patient.nsn, consultation: result.found ? result.consultation : null };
+            // Get ALL consultations for this patient (up to 50)
+            const result = await getAllPatientConsultations(patient.nsn, 50);
+            if (result.consultations && result.consultations.length > 0) {
+              // Combine all diagnoses from all consultations
+              const allDiagnoses = [];
+              result.consultations.forEach(consultation => {
+                if (consultation.diagnoses && Array.isArray(consultation.diagnoses)) {
+                  consultation.diagnoses.forEach(dx => {
+                    allDiagnoses.push({
+                      ...dx,
+                      consultationId: consultation.id,
+                      consultationTime: consultation.consultationTime
+                    });
+                  });
+                }
+              });
+
+              // Return the latest consultation (for next review, clinical notes) plus all diagnoses combined
+              return {
+                nric: patient.nsn,
+                consultation: {
+                  ...result.consultations[0], // Latest consultation
+                  diagnoses: allDiagnoses // All diagnoses from ALL consultations
+                }
+              };
+            }
+            return { nric: patient.nsn, consultation: null };
           } catch {
             return { nric: patient.nsn, consultation: null };
           }
@@ -282,13 +307,31 @@ const MyPatients = ({ onViewChart, onNewPatient }) => {
   };
 
   // Refresh consultation data for a specific patient (for dynamic sync)
+  // Fetches ALL consultations and combines diagnoses
   const refreshPatientConsultation = async (patientNric) => {
     try {
-      const result = await getPatientConsultation(patientNric);
-      if (result.found) {
+      const result = await getAllPatientConsultations(patientNric, 50);
+      if (result.consultations && result.consultations.length > 0) {
+        // Combine all diagnoses from all consultations
+        const allDiagnoses = [];
+        result.consultations.forEach(consultation => {
+          if (consultation.diagnoses && Array.isArray(consultation.diagnoses)) {
+            consultation.diagnoses.forEach(dx => {
+              allDiagnoses.push({
+                ...dx,
+                consultationId: consultation.id,
+                consultationTime: consultation.consultationTime
+              });
+            });
+          }
+        });
+
         setPatientConsultations(prev => ({
           ...prev,
-          [patientNric]: result.consultation
+          [patientNric]: {
+            ...result.consultations[0], // Latest consultation
+            diagnoses: allDiagnoses // All diagnoses from ALL consultations
+          }
         }));
       }
     } catch (err) {

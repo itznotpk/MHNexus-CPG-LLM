@@ -11,19 +11,23 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application built wit
 
 ## 🌟 Features
 
-**Latest Update (2026-01-16):**
-- **Complete Care Plan Sync**: All Step 3 Care Plan data now syncs to database:
-  - Clinical Summary, Medication Recommendations, Interventions & Procedures
-  - Monitoring & Testing, Patient Education, Referrals
-  - Lifestyle Goals, CPG References
-- **Dynamic Follow-up Display**: Step 4 Plan Summary now shows actual TCA date from database
-- **Timezone Fix**: All timestamps now display correctly in UTC+08:00 (Malaysia/Singapore)
+**Latest Update (2026-01-18):**
+- **Multiple Consultations per Patient**: Each patient can now have multiple consultation records
+  - New `consultation_number` column for per-patient sequence (1, 2, 3... for each NRIC)
+  - Global `id` for technical/internal use
+  - New SQL migration: `supabase/consultations_migration_v2.sql`
+- **New RPC Functions**:
+  - `start_consultation(nric, notes)` - Creates new consultation row
+  - `update_consultation(id, ...)` - Updates existing consultation by ID
+  - `get_patient_consultations(nric, limit)` - Gets all consultations for a patient
+  - `get_latest_consultation(nric)` - Gets most recent consultation
+- **My Patients Enhancement**: Diagnoses section now shows ALL diagnoses from ALL consultations
+- **TCA Date Fix**: Next Review Date from Step 3 now correctly synced to database
 
-**Previous Update (2026-01-15):**
-- **Dynamic Diagnoses Sync**: Diagnoses from `consultations.diagnoses` with timestamps
-- **Risk Level Sync**: Patient risk calculated from diagnoses and synced to DB
-- **Patient Status Selection**: Status selection in Care Plan step 3
-- **TCA Date Picker**: Moved to step 3 Follow-up section
+**Previous Update (2026-01-16):**
+- **Complete Care Plan Sync**: All Step 3 Care Plan data syncs to database
+- **Dynamic Follow-up Display**: Step 4 Plan Summary shows actual TCA date
+- **Timezone Fix**: All timestamps display correctly in UTC+08:00
 
 ### 🏠 Sidebar Navigation & Dashboard
 
@@ -339,5 +343,5 @@ Proprietary - MHNexus Healthcare Solutions
 
 For a full list of changes, see [CHANGELOG.md](CHANGELOG.md).
 
-**Version**: 1.7.0 (Dynamic Data Sync & Care Plan Workflow, Jan 2026)
-**Last Updated**: January 15, 2026
+**Version**: 1.8.0 (Multiple Consultations per Patient, Jan 2026)
+**Last Updated**: January 18, 2026

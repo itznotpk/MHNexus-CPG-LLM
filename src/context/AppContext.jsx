@@ -3,7 +3,16 @@ import {
   sampleDiagnosis,
   sampleCarePlan,
 } from '../data/sampleData';
-import { searchPatientByNRIC, savePatientVitals, isSupabaseConfigured, saveConsultation, updatePatientMedications, updatePatientRiskLevel, updatePatientStatus } from '../lib/supabase';
+import {
+  searchPatientByNRIC,
+  savePatientVitals,
+  isSupabaseConfigured,
+  startConsultation,
+  updateConsultation,
+  updatePatientMedications,
+  updatePatientRiskLevel,
+  updatePatientStatus
+} from '../lib/supabase';
 import { getNowUTC8, getTodayUTC8 } from '../utils/timezone';
 
 // Always use Supabase for patient data
@@ -42,6 +51,7 @@ const initialState = {
   mpisSynced: false,
   nextReviewDate: '', // TCA date from step 1
   patientStatus: 'active', // Patient status from step 3 (active, follow-up, discharged)
+  currentConsultationId: null, // ID of the current consultation in progress
   diagnosis: null,
   carePlan: null,
   isAnalyzing: false,
@@ -58,6 +68,8 @@ function appReducer(state, action) {
       return { ...state, nextReviewDate: action.payload };
     case 'SET_PATIENT_STATUS':
       return { ...state, patientStatus: action.payload };
+    case 'SET_CONSULTATION_ID':
+      return { ...state, currentConsultationId: action.payload };
     case 'SET_VITALS':
       return { ...state, vitals: { ...state.vitals, ...action.payload } };
     case 'SET_MPIS_DATA':
@@ -170,8 +182,26 @@ export function AppProvider({ children }) {
     return { found: false };
   };
 
-  const analyzeAssessment = () => {
+  const analyzeAssessment = async () => {
     dispatch({ type: 'SET_ANALYZING', payload: true });
+
+    // Start a new consultation in the database (creates new row with unique ID)
+    if (USE_SUPABASE && state.patient.nsn) {
+      try {
+        console.log('🆕 Starting new consultation for patient:', state.patient.nsn);
+        const result = await startConsultation(state.patient.nsn, state.clinicalNotes);
+
+        if (result.success && result.consultationId) {
+          console.log('✅ New consultation created with ID:', result.consultationId);
+          dispatch({ type: 'SET_CONSULTATION_ID', payload: result.consultationId });
+        } else {
+          console.warn('⚠️ Failed to start consultation:', result.error);
+        }
+      } catch (err) {
+        console.error('Error starting consultation:', err);
+      }
+    }
+
     return new Promise((resolve) => {
       setTimeout(() => {
         dispatch({ type: 'SET_DIAGNOSIS', payload: sampleDiagnosis });
@@ -193,8 +223,8 @@ export function AppProvider({ children }) {
       (d) => selectedIds.includes(d.id)
     ) || [];
 
-    // Save to database - include diagnoses, clinical notes, and TCA date from step 1
-    if (USE_SUPABASE && state.patient.nsn) {
+    // Save to database - include diagnoses and TCA date
+    if (USE_SUPABASE && state.currentConsultationId) {
       try {
         // Use nextReviewDate from step 1 (user-selected TCA), or default to 4 weeks
         let nextReviewStr = state.nextReviewDate;
@@ -215,15 +245,14 @@ export function AppProvider({ children }) {
           recordedAt: now
         }));
 
-        const result = await saveConsultation(
-          state.patient.nsn,
-          state.clinicalNotes,
-          nextReviewStr,
-          diagnosesForDB
-        );
+        // Update the consultation with diagnoses using consultation ID
+        const result = await updateConsultation(state.currentConsultationId, {
+          nextReview: nextReviewStr,
+          diagnoses: diagnosesForDB
+        });
 
         if (result.success) {
-          console.log('✅ Diagnoses saved to database:', diagnosesForDB);
+          console.log('✅ Diagnoses saved to consultation:', state.currentConsultationId, diagnosesForDB);
         } else {
           console.warn('⚠️ Failed to save diagnoses:', result.error);
         }
@@ -313,8 +342,8 @@ export function AppProvider({ children }) {
       }
     }
 
-    // Sync all Care Plan data to database
-    if (USE_SUPABASE && state.patient.nsn) {
+    // Sync all Care Plan data to consultation using consultation ID
+    if (USE_SUPABASE && state.currentConsultationId) {
       try {
         const carePlanSummary = state.carePlan?.clinicalSummary || state.carePlan?.summary || null;
         const medicationRecommendations = state.carePlan?.medications || null;
@@ -324,12 +353,10 @@ export function AppProvider({ children }) {
         const referrals = state.carePlan?.disposition?.referrals || null;
         const lifestyleGoals = state.carePlan?.lifestyle || null;
         const cpgReferences = state.carePlan?.cpgReferences || null;
-        console.log('📅 Syncing Care Plan data to DB');
-        const tcaResult = await saveConsultation(
-          state.patient.nsn,
-          state.clinicalNotes || '',
-          state.nextReviewDate || null,
-          [],
+
+        console.log('📅 Syncing Care Plan data to consultation:', state.currentConsultationId, 'TCA:', state.nextReviewDate);
+        const tcaResult = await updateConsultation(state.currentConsultationId, {
+          nextReview: state.nextReviewDate || null, // TCA date from Step 3
           carePlanSummary,
           medicationRecommendations,
           interventions,
@@ -338,9 +365,10 @@ export function AppProvider({ children }) {
           referrals,
           lifestyleGoals,
           cpgReferences
-        );
+        });
+
         if (tcaResult.success) {
-          console.log('✅ Care Plan data synced');
+          console.log('✅ Care Plan data synced to consultation:', state.currentConsultationId);
         } else {
           console.error('❌ Failed to sync:', tcaResult.error);
         }

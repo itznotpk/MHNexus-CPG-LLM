@@ -580,61 +580,98 @@ export const updateProfile = async (updates) => {
 // ==============================================================================
 
 /**
- * Save or update a consultation for a patient
- * Uses RPC function with SECURITY DEFINER to bypass RLS (for demo)
+ * Start a new consultation for a patient (creates new row in consultations table)
+ * Called when "Analyze Clinical Assessment" button is pressed in Step 1
  * @param {string} patientNric - Patient's NRIC
  * @param {string} clinicalNotes - Clinical notes text
- * @param {string|null} nextReview - Next review date (YYYY-MM-DD format)
- * @param {Array|null} diagnoses - Array of selected diagnoses objects
- * @param {string|null} carePlanSummary - Care plan summary text
- * @param {Object|null} medicationRecommendations - Medication recommendations
- * @param {Array|null} interventions - Interventions & Procedures array
- * @param {Array|null} monitoring - Monitoring & Testing array
- * @param {Array|null} patientEducation - Patient Education array
- * @param {Array|null} referrals - Referrals array
- * @param {Array|null} lifestyleGoals - Lifestyle Goals array
- * @param {Array|null} cpgReferences - CPG References array
- * @returns {Promise<{success: boolean, data: Object|null, error: Error|null}>}
+ * @returns {Promise<{success: boolean, consultationId: number|null, error: Error|null}>}
  */
-export const saveConsultation = async (patientNric, clinicalNotes, nextReview = null, diagnoses = [], carePlanSummary = null, medicationRecommendations = null, interventions = null, monitoring = null, patientEducation = null, referrals = null, lifestyleGoals = null, cpgReferences = null) => {
+export const startConsultation = async (patientNric, clinicalNotes) => {
   try {
-    // Use RPC function with SECURITY DEFINER to bypass RLS
+    console.log('🆕 Starting new consultation for patient:', patientNric);
+
     const { data, error } = await supabase
-      .rpc('save_consultation_bypass', {
+      .rpc('start_consultation', {
         p_patient_nric: patientNric,
-        p_clinical_notes: clinicalNotes,
-        p_next_review: nextReview,
-        p_diagnoses: diagnoses,
-        p_care_plan_summary: carePlanSummary,
-        p_medication_recommendations: medicationRecommendations,
-        p_interventions: interventions,
-        p_monitoring: monitoring,
-        p_patient_education: patientEducation,
-        p_referrals: referrals,
-        p_lifestyle_goals: lifestyleGoals,
-        p_cpg_references: cpgReferences
+        p_clinical_notes: clinicalNotes
       });
 
     if (error) {
-      console.error('Error saving consultation:', error);
-      return { success: false, data: null, error };
+      console.error('Error starting consultation:', error);
+      return { success: false, consultationId: null, error };
     }
 
-    console.log('✅ Consultation saved:', data);
-    return { success: true, data, error: null };
+    console.log('✅ Consultation started:', data);
+    return {
+      success: true,
+      consultationId: data.consultation_id,
+      error: null
+    };
   } catch (err) {
-    console.error('Exception saving consultation:', err);
-    return { success: false, data: null, error: err };
+    console.error('Exception starting consultation:', err);
+    return { success: false, consultationId: null, error: err };
   }
 };
 
 /**
- * Get consultation for a patient by NRIC
+ * Update an existing consultation by ID
+ * Called during diagnosis confirmation (Step 2) and plan finalization (Step 3/4)
+ * @param {number} consultationId - The consultation ID to update
+ * @param {Object} updates - Fields to update
+ * @returns {Promise<{success: boolean, error: Error|null}>}
+ */
+export const updateConsultation = async (consultationId, updates = {}) => {
+  try {
+    console.log('📝 Updating consultation:', consultationId, updates);
+
+    const { data, error } = await supabase
+      .rpc('update_consultation', {
+        p_consultation_id: consultationId,
+        p_clinical_notes: updates.clinicalNotes || null,
+        p_next_review: updates.nextReview || null,
+        p_diagnoses: updates.diagnoses || null,
+        p_care_plan_summary: updates.carePlanSummary || null,
+        p_medication_recommendations: updates.medicationRecommendations || null,
+        p_interventions: updates.interventions || null,
+        p_monitoring: updates.monitoring || null,
+        p_patient_education: updates.patientEducation || null,
+        p_referrals: updates.referrals || null,
+        p_lifestyle_goals: updates.lifestyleGoals || null,
+        p_cpg_references: updates.cpgReferences || null
+      });
+
+    if (error) {
+      console.error('Error updating consultation:', error);
+      return { success: false, error };
+    }
+
+    console.log('✅ Consultation updated:', data);
+    return { success: true, error: null };
+  } catch (err) {
+    console.error('Exception updating consultation:', err);
+    return { success: false, error: err };
+  }
+};
+
+/**
+ * Legacy function - Save or update a consultation for a patient
+ * @deprecated Use startConsultation() and updateConsultation() instead
+ */
+export const saveConsultation = async (patientNric, clinicalNotes, nextReview = null, diagnoses = [], carePlanSummary = null, medicationRecommendations = null, interventions = null, monitoring = null, patientEducation = null, referrals = null, lifestyleGoals = null, cpgReferences = null) => {
+  console.warn('⚠️ saveConsultation is deprecated. Use startConsultation() and updateConsultation() instead.');
+  // This function is kept for backward compatibility during migration
+  // It will be removed in future versions
+  return { success: false, data: null, error: new Error('Function deprecated') };
+};
+
+/**
+ * Get the latest consultation for a patient by NRIC
  * @param {string} patientNric - Patient's NRIC
  * @returns {Promise<{found: boolean, consultation: Object|null, error: Error|null}>}
  */
 export const getPatientConsultation = async (patientNric) => {
   try {
+    // Get the most recent consultation for this patient
     const { data, error } = await supabase
       .from('consultations')
       .select(`
@@ -642,20 +679,23 @@ export const getPatientConsultation = async (patientNric) => {
         doctor:created_by(full_name)
       `)
       .eq('patient_nric', patientNric)
-      .single();
+      .order('consultation_time', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     if (error) {
-      // PGRST116 means no rows found - not an error for our purposes
-      if (error.code === 'PGRST116') {
-        return { found: false, consultation: null, error: null };
-      }
       console.error('Error fetching consultation:', error);
       return { found: false, consultation: null, error };
+    }
+
+    if (!data) {
+      return { found: false, consultation: null, error: null };
     }
 
     return {
       found: true,
       consultation: {
+        id: data.id,
         patientNric: data.patient_nric,
         clinicalNotes: data.clinical_notes,
         nextReview: data.next_review,
@@ -672,6 +712,50 @@ export const getPatientConsultation = async (patientNric) => {
   } catch (err) {
     console.error('Exception fetching consultation:', err);
     return { found: false, consultation: null, error: err };
+  }
+};
+
+/**
+ * Get all consultations for a patient by NRIC
+ * @param {string} patientNric - Patient's NRIC
+ * @param {number} limit - Maximum number of consultations to return (default 10)
+ * @returns {Promise<{consultations: Array, error: Error|null}>}
+ */
+export const getAllPatientConsultations = async (patientNric, limit = 10) => {
+  try {
+    const { data, error } = await supabase
+      .from('consultations')
+      .select(`
+        *,
+        doctor:created_by(full_name)
+      `)
+      .eq('patient_nric', patientNric)
+      .order('consultation_time', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('Error fetching consultations:', error);
+      return { consultations: [], error };
+    }
+
+    const consultations = (data || []).map(c => ({
+      id: c.id,
+      patientNric: c.patient_nric,
+      clinicalNotes: c.clinical_notes,
+      nextReview: c.next_review,
+      diagnoses: c.diagnoses || [],
+      carePlanSummary: c.care_plan_summary,
+      medicationRecommendations: c.medication_recommendations,
+      consultationTime: c.consultation_time,
+      createdAt: c.created_at,
+      updatedAt: c.updated_at,
+      doctorName: c.doctor?.full_name || 'Unknown'
+    }));
+
+    return { consultations, error: null };
+  } catch (err) {
+    console.error('Exception fetching consultations:', err);
+    return { consultations: [], error: err };
   }
 };
 
