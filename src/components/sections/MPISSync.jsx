@@ -46,7 +46,7 @@ export function MPISSync() {
           {/* Patient Info */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className={`p-3 rounded-xl ${isDark ? 'bg-white/10' : 'bg-white/50'}`}>
-              <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Race/Ethnicity</span>
+              <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Race</span>
               <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{mpisData.race}</p>
             </div>
             <div className={`p-3 rounded-xl ${isDark ? 'bg-white/10' : 'bg-white/50'}`}>

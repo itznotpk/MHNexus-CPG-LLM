@@ -24,7 +24,7 @@ jspdf==2.5.2
 jspdf-autotable==3.8.4
 
 # Backend Integration
-@supabase/supabase-js==2.89.0
+@supabase/supabase-js==2.90.1
 
 # ==========================================
 # DEVELOPMENT DEPENDENCIES

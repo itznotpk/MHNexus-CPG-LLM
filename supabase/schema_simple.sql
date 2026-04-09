@@ -13,33 +13,7 @@
 -- ==============================================================================
 -- WARNING: This will delete ALL existing data in ALL tables!
 
--- Drop ALL triggers first (they depend on functions and tables)
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-DROP TRIGGER IF EXISTS update_profiles_updated_at ON public.profiles;
-DROP TRIGGER IF EXISTS update_patients_updated_at ON public.patients;
-DROP TRIGGER IF EXISTS update_appointments_updated_at ON public.appointments;
-DROP TRIGGER IF EXISTS update_patient_medications_updated_at ON public.patient_medications;
-DROP TRIGGER IF EXISTS update_consultations_updated_at ON public.consultations;
-DROP TRIGGER IF EXISTS update_care_plans_updated_at ON public.care_plans;
-DROP TRIGGER IF EXISTS calculate_vitals_status ON public.vitals;
-DROP TRIGGER IF EXISTS recalculate_patient_risk ON public.patient_comorbidities;
-DROP TRIGGER IF EXISTS audit_patients ON public.patients;
-DROP TRIGGER IF EXISTS audit_consultations ON public.consultations;
-DROP TRIGGER IF EXISTS audit_care_plans ON public.care_plans;
-DROP TRIGGER IF EXISTS audit_diagnoses ON public.diagnoses;
-
--- Drop ALL functions
-DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
-DROP FUNCTION IF EXISTS handle_new_user() CASCADE;
-DROP FUNCTION IF EXISTS search_patient_by_nric(TEXT) CASCADE;
-DROP FUNCTION IF EXISTS register_patient(TEXT, TEXT, DATE, gender_type, TEXT, TEXT, TEXT, TEXT[], UUID) CASCADE;
-DROP FUNCTION IF EXISTS update_patient_from_mpis(TEXT, TEXT, TEXT[], JSONB, JSONB) CASCADE;
-DROP FUNCTION IF EXISTS calculate_vital_status() CASCADE;
-DROP FUNCTION IF EXISTS calculate_patient_risk() CASCADE;
-DROP FUNCTION IF EXISTS log_audit_event() CASCADE;
-DROP FUNCTION IF EXISTS update_usage_metrics(UUID, TEXT, INTEGER) CASCADE;
-
--- Drop ALL tables (order matters due to foreign keys - drop dependent tables first)
+-- Drop ALL tables first (CASCADE will automatically drop dependent triggers)
 DROP TABLE IF EXISTS public.usage_metrics CASCADE;
 DROP TABLE IF EXISTS public.audit_log CASCADE;
 DROP TABLE IF EXISTS public.cds_alerts CASCADE;
@@ -56,6 +30,17 @@ DROP TABLE IF EXISTS public.patient_comorbidities CASCADE;
 DROP TABLE IF EXISTS public.patient_allergies CASCADE;
 DROP TABLE IF EXISTS public.patients CASCADE;
 DROP TABLE IF EXISTS public.profiles CASCADE;
+
+-- Drop ALL functions (CASCADE handles dependencies)
+DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
+DROP FUNCTION IF EXISTS handle_new_user() CASCADE;
+DROP FUNCTION IF EXISTS search_patient_by_nric(TEXT) CASCADE;
+DROP FUNCTION IF EXISTS register_patient(TEXT, TEXT, DATE, gender_type, TEXT, TEXT, TEXT, TEXT[], UUID) CASCADE;
+DROP FUNCTION IF EXISTS update_patient_from_mpis(TEXT, TEXT, TEXT[], JSONB, JSONB) CASCADE;
+DROP FUNCTION IF EXISTS calculate_vital_status() CASCADE;
+DROP FUNCTION IF EXISTS calculate_patient_risk() CASCADE;
+DROP FUNCTION IF EXISTS log_audit_event() CASCADE;
+DROP FUNCTION IF EXISTS update_usage_metrics(UUID, TEXT, INTEGER) CASCADE;
 
 -- Drop ALL enum types
 DROP TYPE IF EXISTS care_plan_status CASCADE;
@@ -137,13 +122,10 @@ CREATE TABLE public.profiles (
 -- When clinician enters NRIC, these fields are populated
 
 CREATE TABLE public.patients (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    
     -- =====================
     -- PATIENT IDENTIFIERS
     -- =====================
-    nric TEXT UNIQUE NOT NULL,                    -- National Registration IC (e.g., 580315-08-1234)
-    mrn TEXT,                                      -- Medical Record Number (hospital-specific)
+    nric TEXT PRIMARY KEY,                        -- National Registration IC (e.g., 580315-08-1234) - PRIMARY KEY
     
     -- =====================
     -- DEMOGRAPHICS (Shown in UI after MPIS sync)
@@ -154,21 +136,6 @@ CREATE TABLE public.patients (
     -- because PostgreSQL requires generated columns to use immutable expressions
     gender gender_type NOT NULL,
     race TEXT,                                     -- Malay, Chinese, Indian, Other
-    ethnicity TEXT,
-    
-    -- =====================
-    -- CONTACT INFO
-    -- =====================
-    phone TEXT,
-    email TEXT,
-    address TEXT,
-    
-    -- =====================
-    -- EMERGENCY CONTACT
-    -- =====================
-    emergency_contact_name TEXT,
-    emergency_contact_phone TEXT,
-    emergency_contact_relationship TEXT,
     
     -- =====================
     -- MEDICAL DATA (from MPIS sync)
@@ -240,14 +207,12 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Function to search patient by NRIC (for MPIS sync)
 CREATE OR REPLACE FUNCTION search_patient_by_nric(p_nric TEXT)
 RETURNS TABLE (
-    id UUID,
     nric TEXT,
     full_name TEXT,
     date_of_birth DATE,
     age INTEGER,
     gender gender_type,
     race TEXT,
-    ethnicity TEXT,
     allergies TEXT,
     comorbidities TEXT[],
     current_medications JSONB,
@@ -257,14 +222,12 @@ RETURNS TABLE (
 BEGIN
     RETURN QUERY
     SELECT 
-        p.id,
         p.nric,
         p.full_name,
         p.date_of_birth,
         EXTRACT(YEAR FROM age(CURRENT_DATE, p.date_of_birth))::INTEGER AS age,
         p.gender,
         p.race,
-        p.ethnicity,
         p.allergies,
         p.comorbidities,
         p.current_medications,
@@ -282,14 +245,11 @@ CREATE OR REPLACE FUNCTION register_patient(
     p_date_of_birth DATE,
     p_gender gender_type,
     p_race TEXT DEFAULT NULL,
-    p_ethnicity TEXT DEFAULT NULL,
     p_allergies TEXT DEFAULT NULL,
     p_comorbidities TEXT[] DEFAULT NULL,
     p_created_by UUID DEFAULT NULL
 )
-RETURNS UUID AS $$
-DECLARE
-    new_patient_id UUID;
+RETURNS TEXT AS $$
 BEGIN
     INSERT INTO public.patients (
         nric,
@@ -297,7 +257,6 @@ BEGIN
         date_of_birth,
         gender,
         race,
-        ethnicity,
         allergies,
         comorbidities,
         created_by,
@@ -308,15 +267,13 @@ BEGIN
         p_date_of_birth,
         p_gender,
         p_race,
-        p_ethnicity,
         p_allergies,
         COALESCE(p_comorbidities, ARRAY[]::TEXT[]),
         p_created_by,
         NOW()
-    )
-    RETURNING id INTO new_patient_id;
+    );
     
-    RETURN new_patient_id;
+    RETURN p_nric;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -386,10 +343,11 @@ CREATE POLICY "Users can insert own profile"
     TO authenticated
     WITH CHECK (auth.uid() = id);
 
--- Patients: All authenticated medical staff can view/edit patients
-CREATE POLICY "Patients viewable by authenticated users"
+-- Patients: SELECT for public, INSERT/UPDATE for authenticated only
+-- (Aligned with consultations table policies)
+CREATE POLICY "Patients viewable by public"
     ON public.patients FOR SELECT
-    TO authenticated
+    TO public
     USING (true);
 
 CREATE POLICY "Patients insertable by authenticated users"
@@ -412,7 +370,6 @@ INSERT INTO public.patients (
     date_of_birth,
     gender,
     race,
-    ethnicity,
     allergies,
     comorbidities,
     current_medications,
@@ -423,7 +380,6 @@ INSERT INTO public.patients (
     'Ahmad bin Abdullah',
     '1958-03-15',
     'male',
-    'Malay',
     'Malay',
     'Penicillin',
     ARRAY['Type 2 Diabetes Mellitus (10 years)', 'Hypertension (15 years)', 'Dyslipidemia'],

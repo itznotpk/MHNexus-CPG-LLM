@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Activity, Heart, Thermometer, Wind, Droplets, Scale, Ruler } from 'lucide-react';
+import { Activity, Heart, Thermometer, Wind, Droplets, Scale, Ruler, Zap } from 'lucide-react';
 import { GlassCard, Input, Badge } from '../shared';
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -90,13 +90,43 @@ export function VitalsGrid() {
     },
   ];
 
+  const handleDemoFill = () => {
+    dispatch({
+      type: 'SET_VITALS',
+      payload: {
+        bpSystolic: '120',
+        bpDiastolic: '80',
+        hr: '72',
+        temp: '36.8',
+        rr: '14',
+        spo2: '99',
+        weight: '70',
+        height: '170'
+      }
+    });
+  };
+
   return (
     <GlassCard className="p-5">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="p-2 bg-[var(--accent-primary)]/20 rounded-xl">
-          <Activity className="w-5 h-5 text-[var(--accent-primary)]" />
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-[var(--accent-primary)]/20 rounded-xl">
+            <Activity className="w-5 h-5 text-[var(--accent-primary)]" />
+          </div>
+          <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Vital Signs</h3>
         </div>
-        <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Vital Signs</h3>
+        <button
+          onClick={handleDemoFill}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all
+            ${isDark
+              ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
+              : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+            }`}
+          title="Fill with demo data"
+        >
+          <Zap className="w-4 h-4" />
+          Demo Fill
+        </button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

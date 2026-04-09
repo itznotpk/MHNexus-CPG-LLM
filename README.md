@@ -11,12 +11,23 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application built wit
 
 ## 🌟 Features
 
-**Latest Update (2026-01-09):**
-- **Streamlined My Patients Table**: Simplified view with centered column alignment, dynamic accent-colored buttons, and expandable patient details.
-- **Auto-Fill NRIC Workflow**: Clicking "Start Consult" from Home page now auto-populates the patient's NRIC in the Consultation tab.
-- **Unified Profile Avatars**: Settings profile picture now syncs with sidebar, using the same initials and accent color gradient.
-- **Enhanced Theme System**: Extended accent color properties for more flexible light/dark mode styling.
-- See [CHANGELOG.md](CHANGELOG.md) for details.
+**Latest Update (2026-01-18):**
+- **Multiple Consultations per Patient**: Each patient can now have multiple consultation records
+  - New `consultation_number` column for per-patient sequence (1, 2, 3... for each NRIC)
+  - Global `id` for technical/internal use
+  - New SQL migration: `supabase/consultations_migration_v2.sql`
+- **New RPC Functions**:
+  - `start_consultation(nric, notes)` - Creates new consultation row
+  - `update_consultation(id, ...)` - Updates existing consultation by ID
+  - `get_patient_consultations(nric, limit)` - Gets all consultations for a patient
+  - `get_latest_consultation(nric)` - Gets most recent consultation
+- **My Patients Enhancement**: Diagnoses section now shows ALL diagnoses from ALL consultations
+- **TCA Date Fix**: Next Review Date from Step 3 now correctly synced to database
+
+**Previous Update (2026-01-16):**
+- **Complete Care Plan Sync**: All Step 3 Care Plan data syncs to database
+- **Dynamic Follow-up Display**: Step 4 Plan Summary shows actual TCA date
+- **Timezone Fix**: All timestamps display correctly in UTC+08:00
 
 ### 🏠 Sidebar Navigation & Dashboard
 
@@ -34,6 +45,9 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application built wit
 - **Patient Registry**: Searchable patient database with initial-based colored avatars
 - **Status Filters**: Active, Follow-up, Discharged tabs for easy management
 - **Inline Expansion**: Click any patient row to view full details directly below it
+- **Diagnoses Sync**: Shows selected differential diagnoses from consultations (synced from database)
+- **3-Column Detail Layout**: Vital Signs, Clinical Notes, and Medications displayed side-by-side
+- **Scrollable Lists**: Long diagnoses/medications lists have max-height containers
 - **Medical History**: Access detailed historical data (conditions, meds, labs, procedures) in a dedicated modal
 - **Quick Actions**: View history, view vital charts, schedule appointment, and start consult
 - **Risk Indicators**: Visual badges and single-line displays for patient risk levels
@@ -57,9 +71,10 @@ A modern, AI-powered Clinical Practice Guideline (CPG) web application built wit
 
 #### 2. AI Diagnosis Section
 - **AI-Generated Differential Diagnoses**: Ranked by probability
-- **ICD-10 Codes**: Automatically assigned to each diagnosis
+- **Multiple Selection**: Click to select one or more diagnoses for care plan generation
+- **ICD-11 Codes**: Automatically assigned to each diagnosis
 - **Risk Assessment Badges**: High/Medium/Low risk indicators
-- **Selectable Diagnoses**: Click to select any diagnosis for care plan generation
+- **Database Storage**: Selected diagnoses saved to consultations table and accumulated over time
 
 #### 3. Care Plan Section
 - **Clinical Summary**: AI-generated patient overview
@@ -328,5 +343,5 @@ Proprietary - MHNexus Healthcare Solutions
 
 For a full list of changes, see [CHANGELOG.md](CHANGELOG.md).
 
-**Version**: 1.2.2 (My Patients & Consultation Workflow Improvements, Jan 2026)
-**Last Updated**: January 9, 2026
+**Version**: 1.8.0 (Multiple Consultations per Patient, Jan 2026)
+**Last Updated**: January 18, 2026

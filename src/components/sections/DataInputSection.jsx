@@ -1,12 +1,12 @@
 import React from 'react';
-import { Stethoscope, Sparkles, Brain, FileText, Activity, Search, UserPlus, CheckCircle, AlertCircle, X, Database, Heart, Pill, BarChart2, Wind, Scale, Thermometer } from 'lucide-react';
+import { Stethoscope, Sparkles, Brain, FileText, Activity, Search, UserPlus, CheckCircle, AlertCircle, X, Database, Heart, Pill, BarChart2, Wind, Scale, Thermometer, Loader2, ClipboardList } from 'lucide-react';
 import { ClinicalNotes } from './ClinicalNotes';
 import { VitalsGrid } from './VitalsGrid';
 import { Button, Skeleton, SkeletonDiagnosis, GlassCard, Badge } from '../shared';
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
 import { VitalsLineChart } from '../shared/VitalsLineChart';
-import { mpisPatientDatabase } from '../../data/sampleData';
+import { getPatientConsultation } from '../../lib/supabase';
 
 // Analyzing Skeleton Component
 function AnalyzingSkeleton() {
@@ -93,6 +93,11 @@ const vitalsTabs = [
       { key: 'weight', label: 'Weight', unit: 'kg', color: '#10b981' },
     ]
   },
+  {
+    id: 'temperature', label: 'Temperature', icon: Thermometer, metrics: [
+      { key: 'temp', label: 'Temperature', unit: '°C', color: '#f59e0b' },
+    ]
+  },
 ];
 
 // Chart Modal Component
@@ -102,8 +107,35 @@ function ChartModal({ patient, isOpen, onClose }) {
 
   if (!isOpen || !patient) return null;
 
-  const mpisRecord = patient.nsn ? mpisPatientDatabase[patient.nsn] : null;
-  const vitalsData = mpisRecord?.mpisData?.vitalsHistory || [];
+  // Use vitals history from patient object (Supabase only)
+  const rawHistory = patient.vitalsHistory || [];
+
+  // Normalize all entries to objects
+  let history = rawHistory.map(d => {
+    try {
+      return typeof d === 'string' ? JSON.parse(d) : d;
+    } catch (e) {
+      return d;
+    }
+  });
+
+  // Make it ALIGNED and DYNAMIC: Add the currently entered vitals as the latest point
+  const { vitals } = useApp().state;
+  if (vitals.bpSystolic || vitals.hr) {
+    const currentEntry = {
+      date: 'Current',
+      bpSystolic: parseInt(vitals.bpSystolic) || 0,
+      bpDiastolic: parseInt(vitals.bpDiastolic) || 0,
+      hr: parseInt(vitals.hr) || 0,
+      temp: parseFloat(vitals.temp) || 0,
+      spo2: parseInt(vitals.spo2) || 0,
+      weight: parseFloat(vitals.weight) || 0,
+    };
+
+    history = [...history, currentEntry];
+  }
+
+  const vitalsData = history;
   const currentTabConfig = vitalsTabs.find(t => t.id === activeTab);
 
   return (
@@ -191,6 +223,30 @@ function ChartModal({ patient, isOpen, onClose }) {
 // Patient Info Display Card for found patients
 function PatientInfoCard({ patient, mpisData, onClear, onViewChart }) {
   const { isDark } = useTheme();
+  const [previousNotes, setPreviousNotes] = React.useState(null);
+  const [loadingNotes, setLoadingNotes] = React.useState(true);
+
+  // Fetch previous clinical notes when patient is loaded
+  React.useEffect(() => {
+    const fetchNotes = async () => {
+      if (!patient?.nsn) return;
+      setLoadingNotes(true);
+      try {
+        const result = await getPatientConsultation(patient.nsn);
+        if (result.found) {
+          setPreviousNotes(result.consultation);
+        } else {
+          setPreviousNotes(null);
+        }
+      } catch (err) {
+        console.error('Error fetching notes:', err);
+        setPreviousNotes(null);
+      } finally {
+        setLoadingNotes(false);
+      }
+    };
+    fetchNotes();
+  }, [patient?.nsn]);
 
   return (
     <GlassCard className="p-6 border-2 border-green-500/30 bg-gradient-to-br from-green-500/10 to-emerald-500/5">
@@ -248,8 +304,8 @@ function PatientInfoCard({ patient, mpisData, onClear, onViewChart }) {
       {/* MPIS Data */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
         <div className={`p-3 rounded-xl ${isDark ? 'bg-white/10' : 'bg-white/60'}`}>
-          <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Race/Ethnicity</span>
-          <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{mpisData?.race || '-'} / {mpisData?.ethnicity || '-'}</p>
+          <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Race</span>
+          <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{mpisData?.race || '-'}</p>
         </div>
         <div className={`p-3 rounded-xl ${isDark ? 'bg-white/10' : 'bg-white/60'}`}>
           <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Allergies</span>
@@ -273,6 +329,32 @@ function PatientInfoCard({ patient, mpisData, onClear, onViewChart }) {
           </div>
         </div>
       )}
+
+      {/* Previous Clinical Notes */}
+      <div className="mb-4">
+        <div className="flex items-center gap-2 mb-2">
+          <ClipboardList className="w-4 h-4 text-[var(--accent-primary)]" />
+          <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-700'}`}>Previous Clinical Notes</span>
+        </div>
+        {loadingNotes ? (
+          <div className="flex items-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+            <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Loading...</span>
+          </div>
+        ) : previousNotes?.clinicalNotes ? (
+          <div className={`p-3 rounded-lg ${isDark ? 'bg-white/10' : 'bg-white/60'}`}>
+            <p className={`text-sm whitespace-pre-wrap ${isDark ? 'text-white' : 'text-slate-800'}`}>
+              {previousNotes.clinicalNotes}
+            </p>
+            <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+              Last updated: {new Date(previousNotes.consultationTime).toLocaleString()}
+              {previousNotes.doctorName && ` by ${previousNotes.doctorName}`}
+            </p>
+          </div>
+        ) : (
+          <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No previous clinical notes</p>
+        )}
+      </div>
 
       {/* Current Medications */}
       {mpisData?.currentMeds?.length > 0 && (
@@ -350,7 +432,7 @@ function NewPatientForm({ nsn, onClear, onPatientRegistered }) {
     return { dob, age, gender };
   };
 
-  // Auto-fill on mount if we have a valid NRIC
+  // Auto-fill DOB on mount if we have a valid NRIC (gender is NOT auto-filled)
   React.useEffect(() => {
     if (nsn && !patient?.dob) {
       const parsed = parseNRIC(nsn);
@@ -360,12 +442,28 @@ function NewPatientForm({ nsn, onClear, onPatientRegistered }) {
             nsn: nsn,
             dob: parsed.dob,
             age: parsed.age,
-            gender: parsed.gender,
+            // Gender is NOT auto-filled - user must select
           }
         });
       }
     }
   }, [nsn]);
+
+  // Calculate age dynamically when DOB changes
+  React.useEffect(() => {
+    if (patient?.dob) {
+      const birthDate = new Date(patient.dob);
+      const today = new Date();
+      let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        calculatedAge--;
+      }
+      if (calculatedAge !== patient?.age && calculatedAge >= 0) {
+        dispatch({ type: 'SET_PATIENT', payload: { age: calculatedAge } });
+      }
+    }
+  }, [patient?.dob]);
 
   const handlePatientChange = (field, value) => {
     dispatch({ type: 'SET_PATIENT', payload: { [field]: value } });
@@ -412,6 +510,7 @@ function NewPatientForm({ nsn, onClear, onPatientRegistered }) {
       } else {
         setRegistrationSuccess(true);
         console.log('✅ Patient registered successfully:', result.patientId);
+        // Important: Update parent state that patient is now in DB
         if (onPatientRegistered) {
           onPatientRegistered(result.patientId);
         }
@@ -556,21 +655,6 @@ function NewPatientForm({ nsn, onClear, onPatientRegistered }) {
                 <option value="Other">Other</option>
               </select>
             </div>
-            <div>
-              <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                Ethnicity
-              </label>
-              <input
-                type="text"
-                className={`w-full px-3 py-2 rounded-lg border ${isDark
-                  ? 'bg-slate-800/50 border-white/20 text-white placeholder-slate-500'
-                  : 'bg-white/60 border-slate-300 text-slate-800 placeholder-slate-400'
-                  } focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]`}
-                placeholder="Ethnicity"
-                value={mpisData?.ethnicity || ''}
-                onChange={e => handleMpisChange('ethnicity', e.target.value)}
-              />
-            </div>
           </div>
         </div>
 
@@ -638,9 +722,9 @@ function NewPatientForm({ nsn, onClear, onPatientRegistered }) {
 }
 
 export function DataInputSection({ onViewChart }) {
-  const { state, dispatch, syncMPIS, analyzeAssessment } = useApp();
+  const { state, dispatch, syncMPIS, analyzeAssessment, saveVitalsToDB } = useApp();
   const { isDark } = useTheme();
-  const { isAnalyzing, clinicalNotes, mpisData, patient, mpisSynced } = state;
+  const { isAnalyzing, clinicalNotes, mpisData, patient, mpisSynced, vitals } = state;
   const [nsn, setNsn] = React.useState(patient?.nsn || '');
   const [nricError, setNricError] = React.useState('');
   const [mpisLoading, setMpisLoading] = React.useState(false);
@@ -648,6 +732,7 @@ export function DataInputSection({ onViewChart }) {
   const [mpisFound, setMpisFound] = React.useState(false);
   const [isChartModalOpen, setIsChartModalOpen] = React.useState(false);
   const [notesConfirmed, setNotesConfirmed] = React.useState(false);
+  const [showValidationWarning, setShowValidationWarning] = React.useState(false);
 
   // Auto-populate NRIC when navigating from Home page's Start Consult
   React.useEffect(() => {
@@ -656,15 +741,73 @@ export function DataInputSection({ onViewChart }) {
     }
   }, [patient?.nsn]);
 
-  // NRIC format validation: xxxxxx-xx-xxxx (6 digits - 2 digits - 4 digits)
+  // NRIC format validation: accepts both xxxxxx-xx-xxxx and xxxxxxxxxxxx (12 digits)
   const validateNRIC = (nric) => {
-    const pattern = /^\d{6}-\d{2}-\d{4}$/;
-    return pattern.test(nric);
+    // Remove dashes for validation
+    const digitsOnly = nric.replace(/-/g, '');
+    // Must be exactly 12 digits
+    return /^\d{12}$/.test(digitsOnly);
   };
 
-  const canAnalyze = clinicalNotes.trim().length > 0 && mpisChecked && notesConfirmed;
+  // Format NRIC to standard format (xxxxxx-xx-xxxx)
+  const formatNRIC = (nric) => {
+    const digitsOnly = nric.replace(/-/g, '');
+    if (digitsOnly.length === 12) {
+      return `${digitsOnly.slice(0, 6)}-${digitsOnly.slice(6, 8)}-${digitsOnly.slice(8)}`;
+    }
+    return nric;
+  };
 
-  const handleAnalyze = () => {
+  // Check if ALL vital signs fields are filled
+  const hasAllVitals = vitals.bpSystolic && vitals.bpDiastolic && vitals.hr &&
+    vitals.temp && vitals.rr && vitals.spo2 &&
+    vitals.weight && vitals.height;
+  const hasClinicaNotes = clinicalNotes.trim().length > 0 && notesConfirmed;
+
+  // Check if any vitals are filled (for partial fill detection)
+  const hasAnyVitals = vitals.bpSystolic || vitals.bpDiastolic || vitals.hr ||
+    vitals.temp || vitals.rr || vitals.spo2 ||
+    vitals.weight || vitals.height;
+  const hasAnyClinicalNotes = clinicalNotes.trim().length > 0;
+
+  // Determine if completely blank vs partially filled
+  const isCompletelyBlank = !hasAnyVitals && !hasAnyClinicalNotes;
+
+  // Get specific missing fields
+  const getMissingVitalFields = () => {
+    const missing = [];
+    if (!vitals.bpSystolic || !vitals.bpDiastolic) missing.push('Blood Pressure (Systolic/Diastolic)');
+    if (!vitals.hr) missing.push('Heart Rate');
+    if (!vitals.temp) missing.push('Temperature');
+    if (!vitals.rr) missing.push('Respiratory Rate');
+    if (!vitals.spo2) missing.push('SpO2');
+    if (!vitals.weight) missing.push('Weight');
+    if (!vitals.height) missing.push('Height');
+    return missing;
+  };
+
+  const getMissingClinicalFields = () => {
+    const missing = [];
+    if (!clinicalNotes.trim()) missing.push('Clinical Notes');
+    else if (!notesConfirmed) missing.push('Confirm Clinical Notes (click checkbox)');
+    return missing;
+  };
+
+  const canAnalyze = hasAllVitals && hasClinicaNotes && mpisChecked;
+
+  const handleAnalyze = async () => {
+    // Check validation and show warning if not ready
+    if (!canAnalyze) {
+      setShowValidationWarning(true);
+      return;
+    }
+
+    setShowValidationWarning(false);
+    // Save vitals to history before proceeding
+    // We only save if the patient was found (has a record in DB)
+    if (mpisFound) {
+      await saveVitalsToDB();
+    }
     analyzeAssessment();
   };
 
@@ -678,15 +821,19 @@ export function DataInputSection({ onViewChart }) {
     const trimmedNric = nsn.trim();
     if (!trimmedNric) return;
 
-    // Validate NRIC format
+    // Validate NRIC format (accepts with or without dashes)
     if (!validateNRIC(trimmedNric)) {
-      setNricError('Invalid NRIC format. Please use the format: xxxxxx-xx-xxxx (e.g., 580315-08-1234)');
+      setNricError('Invalid NRIC format. Please enter 12 digits (e.g., 580315-08-1234 or 580315081234)');
       return;
     }
 
+    // Format NRIC to standard format with dashes
+    const formattedNric = formatNRIC(trimmedNric);
+    setNsn(formattedNric); // Update input with formatted NRIC
+
     setNricError(''); // Clear any previous error
     setMpisLoading(true);
-    const result = await syncMPIS(trimmedNric);
+    const result = await syncMPIS(formattedNric);
     setMpisLoading(false);
     setMpisChecked(true);
     setMpisFound(result.found);
@@ -800,34 +947,95 @@ export function DataInputSection({ onViewChart }) {
           <NewPatientForm
             nsn={patient?.nsn || nsn}
             onClear={handleClear}
+            onPatientRegistered={() => setMpisFound(true)}
           />
         )
       )}
 
-      {/* Clinical Notes & Vitals - only show after NRIC check */}
+      {/* Vitals & Clinical Notes - only show after NRIC check */}
       {mpisChecked && (
         <>
+          <VitalsGrid />
           <ClinicalNotes
             isConfirmed={notesConfirmed}
             onConfirm={setNotesConfirmed}
           />
-          <VitalsGrid />
         </>
       )}
 
-      <div className="flex justify-center pt-4">
-        <Button
-          variant="primary"
-          size="xl"
-          icon={Stethoscope}
-          disabled={!canAnalyze}
-          onClick={handleAnalyze}
-          glow={canAnalyze}
-          className="min-w-[300px]"
-        >
-          Analyze Clinical Assessment
-        </Button>
-      </div>
+      {/* Validation Warning */}
+      {showValidationWarning && !canAnalyze && mpisChecked && (
+        <div className={`p-4 rounded-xl border-2 ${isDark ? 'bg-amber-500/10 border-amber-500/30' : 'bg-amber-50 border-amber-300'} animate-fadeIn`}>
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              {isCompletelyBlank ? (
+                <>
+                  <h4 className={`font-semibold mb-1 ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>
+                    Please complete vital signs and clinical notes
+                  </h4>
+                  <p className={`text-sm ${isDark ? 'text-amber-300' : 'text-amber-600'}`}>
+                    All vital signs fields and clinical notes are required before proceeding with the analysis.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h4 className={`font-semibold mb-2 ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>
+                    Please complete the following missing fields:
+                  </h4>
+                  {getMissingVitalFields().length > 0 && (
+                    <div className="mb-2">
+                      <span className={`text-xs font-medium ${isDark ? 'text-amber-400/70' : 'text-amber-600/80'}`}>Vital Signs:</span>
+                      <ul className={`text-sm space-y-1 mt-1 ${isDark ? 'text-amber-300' : 'text-amber-600'}`}>
+                        {getMissingVitalFields().map((field, idx) => (
+                          <li key={idx} className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                            {field}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {getMissingClinicalFields().length > 0 && (
+                    <div>
+                      <span className={`text-xs font-medium ${isDark ? 'text-amber-400/70' : 'text-amber-600/80'}`}>Clinical Notes:</span>
+                      <ul className={`text-sm space-y-1 mt-1 ${isDark ? 'text-amber-300' : 'text-amber-600'}`}>
+                        {getMissingClinicalFields().map((field, idx) => (
+                          <li key={idx} className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                            {field}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            <button
+              onClick={() => setShowValidationWarning(false)}
+              className={`p-1 rounded-lg ${isDark ? 'hover:bg-white/10' : 'hover:bg-amber-100'}`}
+            >
+              <X className="w-4 h-4 text-amber-500" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {mpisChecked && (
+        <div className="flex justify-center pt-4">
+          <Button
+            variant="primary"
+            size="xl"
+            icon={Stethoscope}
+            onClick={handleAnalyze}
+            glow={canAnalyze}
+            className="min-w-[300px]"
+          >
+            Analyze Clinical Assessment
+          </Button>
+        </div>
+      )}
 
       {/* Chart Modal */}
       <ChartModal

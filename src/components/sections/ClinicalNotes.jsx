@@ -1,13 +1,13 @@
 import React from 'react';
-import { FileText, Sparkles, CheckCircle2, Edit3 } from 'lucide-react';
+import { FileText, CheckCircle2, Edit3, Zap } from 'lucide-react';
 import { GlassCard, TextArea, Button, VoiceInputButton, VoiceStatusIndicator } from '../shared';
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
 
 export function ClinicalNotes({ isConfirmed, onConfirm }) {
-  const { state, dispatch, loadDemoData } = useApp();
+  const { state, dispatch } = useApp();
   const { isDark } = useTheme();
-  const { clinicalNotes } = state;
+  const { clinicalNotes, patient } = state;
   const [isListening, setIsListening] = React.useState(false);
 
   const handleChange = (value) => {
@@ -27,11 +27,18 @@ export function ClinicalNotes({ isConfirmed, onConfirm }) {
   };
 
   const handleConfirm = () => {
+    // Just confirm the notes locally - actual save happens when "Analyze Clinical Assessment" is pressed
+    // This creates a new consultation row in the database with the clinical notes
     if (onConfirm) onConfirm(true);
   };
 
   const handleEdit = () => {
     if (onConfirm) onConfirm(false);
+  };
+
+  const handleDemoFill = () => {
+    const demoNotes = `Chest pain and tends to vomit`;
+    handleChange(demoNotes);
   };
 
   return (
@@ -53,17 +60,24 @@ export function ClinicalNotes({ isConfirmed, onConfirm }) {
           <VoiceStatusIndicator isListening={isListening} />
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleDemoFill}
+            disabled={isConfirmed}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all
+              ${isConfirmed
+                ? 'opacity-50 cursor-not-allowed'
+                : isDark
+                  ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
+                  : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+              }`}
+            title="Fill with demo data"
+          >
+            <Zap className="w-4 h-4" />
+            Demo Fill
+          </button>
           <VoiceInputButton
             onTranscript={handleVoiceTranscript}
           />
-          <Button
-            variant="secondary"
-            size="sm"
-            icon={Sparkles}
-            onClick={loadDemoData}
-          >
-            Demo Fill
-          </Button>
         </div>
       </div>
 

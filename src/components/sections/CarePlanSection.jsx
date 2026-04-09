@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getTodayUTC8 } from '../../utils/timezone';
 import {
   ClipboardList,
   Stethoscope,
@@ -66,7 +67,7 @@ function AccordionSection({ title, icon: Icon, children, defaultOpen = true, rig
 // Clinical Summary Section
 function ClinicalSummary({ summary, readSummaryButton }) {
   const { isDark } = useTheme();
-  
+
   return (
     <AccordionSection title="Summary" icon={FileText} rightAction={readSummaryButton}>
       <div className={`p-4 rounded-xl ${isDark ? 'bg-white/10' : 'bg-white/50'}`}>
@@ -79,9 +80,9 @@ function ClinicalSummary({ summary, readSummaryButton }) {
 // Interventions Section (Simplified)
 function InterventionsSection({ interventions }) {
   const { isDark } = useTheme();
-  
+
   if (!interventions || interventions.length === 0) return null;
-  
+
   return (
     <AccordionSection title="Interventions & Procedures" icon={Stethoscope}>
       <div className="space-y-2">
@@ -108,7 +109,7 @@ function InterventionsSection({ interventions }) {
 // Medications Section (Simplified with CHANGE category)
 function MedicationsSection({ medications }) {
   const { isDark } = useTheme();
-  
+
   return (
     <AccordionSection title="Medication Recommendations" icon={Pill}>
       <div className="space-y-4">
@@ -230,9 +231,9 @@ function MedicationsSection({ medications }) {
 // Monitoring Section (Simplified with schedules)
 function MonitoringSection({ monitoring }) {
   const { isDark } = useTheme();
-  
+
   if (!monitoring || monitoring.length === 0) return null;
-  
+
   return (
     <AccordionSection title="Monitoring & Testing" icon={Activity}>
       <div className="space-y-2">
@@ -255,20 +256,91 @@ function MonitoringSection({ monitoring }) {
   );
 }
 
-// Follow-Up Section
+// Follow-Up Section with Patient Status and TCA Date Picker
 function FollowUpSection({ followUp }) {
   const { isDark } = useTheme();
-  
+  const { state, dispatch } = useApp();
+  const currentStatus = state.patientStatus || 'active';
+  const nextReviewDate = state.nextReviewDate || '';
+
   if (!followUp) return null;
-  
+
+  const statusOptions = [
+    { value: 'active', label: 'Active', color: 'emerald', icon: Check },
+    { value: 'follow-up', label: 'Follow-up', color: 'amber', icon: Calendar },
+    { value: 'discharged', label: 'Discharged', color: 'slate', icon: Shield },
+  ];
+
+  const handleStatusChange = (status) => {
+    dispatch({ type: 'SET_PATIENT_STATUS', payload: status });
+  };
+
+  const handleTCAChange = (date) => {
+    dispatch({ type: 'SET_NEXT_REVIEW_DATE', payload: date });
+  };
+
   return (
     <AccordionSection title="Follow-up" icon={Calendar}>
-      <div className={`p-4 rounded-xl ${isDark ? 'bg-[var(--accent-primary)]/20' : 'bg-[var(--accent-primary)]/10'}`}>
-        <div className="flex items-center gap-2 mb-2">
-          <Calendar className="w-5 h-5 text-[var(--accent-primary)]" />
-          <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Follow-up Appointment</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Next Review Date (TCA) Picker */}
+        <div className={`p-4 rounded-xl ${isDark ? 'bg-[var(--accent-primary)]/20' : 'bg-[var(--accent-primary)]/10'}`}>
+          <div className="flex items-center gap-2 mb-3">
+            <Calendar className="w-5 h-5 text-[var(--accent-primary)]" />
+            <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Next Review Date (TCA)</span>
+          </div>
+          <input
+            type="date"
+            value={nextReviewDate}
+            onChange={(e) => handleTCAChange(e.target.value)}
+            min={getTodayUTC8()}
+            className={`w-full px-4 py-2.5 rounded-xl border transition-all
+              focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50
+              ${isDark
+                ? 'bg-white/10 border-white/20 text-white'
+                : 'bg-white border-slate-200 text-slate-800'}`}
+          />
+          <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+            Set the patient's next follow-up appointment
+          </p>
         </div>
-        <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>TCA: {followUp}</p>
+
+        {/* Patient Status Selection */}
+        <div className={`p-4 rounded-xl ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+          <div className="flex items-center gap-2 mb-3">
+            <Shield className="w-5 h-5 text-[var(--accent-primary)]" />
+            <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Patient Status</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {statusOptions.map((option) => {
+              const isSelected = currentStatus === option.value;
+              const Icon = option.icon;
+              const colorClasses = {
+                emerald: isSelected
+                  ? 'bg-emerald-500 text-white border-emerald-500'
+                  : `${isDark ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30' : 'bg-emerald-100 text-emerald-700 border-emerald-300 hover:bg-emerald-200'}`,
+                amber: isSelected
+                  ? 'bg-amber-500 text-white border-amber-500'
+                  : `${isDark ? 'bg-amber-500/20 text-amber-400 border-amber-500/30 hover:bg-amber-500/30' : 'bg-amber-100 text-amber-700 border-amber-300 hover:bg-amber-200'}`,
+                slate: isSelected
+                  ? 'bg-slate-500 text-white border-slate-500'
+                  : `${isDark ? 'bg-slate-500/20 text-slate-400 border-slate-500/30 hover:bg-slate-500/30' : 'bg-slate-200 text-slate-700 border-slate-300 hover:bg-slate-300'}`,
+              };
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => handleStatusChange(option.value)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border font-medium transition-all ${colorClasses[option.color]}`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+          <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+            Status and TCA will be synced when care plan is finalized
+          </p>
+        </div>
       </div>
     </AccordionSection>
   );
@@ -277,9 +349,9 @@ function FollowUpSection({ followUp }) {
 // Referrals Section
 function ReferralsSection({ referrals }) {
   const { isDark } = useTheme();
-  
+
   if (!referrals || referrals.length === 0) return null;
-  
+
   return (
     <AccordionSection title="Referrals" icon={ClipboardList}>
       <div className="space-y-2">
@@ -300,7 +372,7 @@ function ReferralsSection({ referrals }) {
 // Patient Education Section (Enhanced with categories)
 function PatientEducationSection({ education }) {
   const { isDark } = useTheme();
-  
+
   if (!education || education.length === 0) return null;
 
   // Handle both old string format and new object format
@@ -310,7 +382,7 @@ function PatientEducationSection({ education }) {
     }
     return item;
   });
-  
+
   return (
     <AccordionSection title="Patient Education & Counseling" icon={BookOpen}>
       <div className="space-y-2">
@@ -336,7 +408,7 @@ function PatientEducationSection({ education }) {
 // Lifestyle & Self-Management Section (NEW)
 function LifestyleSection({ lifestyle }) {
   const { isDark } = useTheme();
-  
+
   if (!lifestyle || lifestyle.length === 0) return null;
 
   const categoryIcons = {
@@ -345,7 +417,7 @@ function LifestyleSection({ lifestyle }) {
     Weight: Activity,
     Lifestyle: BookOpen,
   };
-  
+
   return (
     <AccordionSection title="Lifestyle & Self-Management Goals" icon={Activity}>
       <div className="space-y-2">
@@ -374,18 +446,17 @@ function LifestyleSection({ lifestyle }) {
 // CPG References Section
 function CPGReferencesSection({ references }) {
   const { isDark } = useTheme();
-  
+
   return (
     <AccordionSection title="CPG References" icon={BookOpen} defaultOpen={false}>
       <div className="flex flex-wrap gap-2">
         {references.map((ref, idx) => (
           <button
             key={idx}
-            className={`px-3 py-2 rounded-xl text-sm transition-colors text-left ${
-              isDark 
-                ? 'bg-[var(--accent-primary)]/20 hover:bg-[var(--accent-primary)]/30 text-slate-200'
-                : 'bg-[var(--accent-primary)]/10 hover:bg-[var(--accent-primary)]/20 text-slate-700'
-            }`}
+            className={`px-3 py-2 rounded-xl text-sm transition-colors text-left ${isDark
+              ? 'bg-[var(--accent-primary)]/20 hover:bg-[var(--accent-primary)]/30 text-slate-200'
+              : 'bg-[var(--accent-primary)]/10 hover:bg-[var(--accent-primary)]/20 text-slate-700'
+              }`}
           >
             <span className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{ref.title}</span>
             <span className={`ml-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
@@ -402,8 +473,16 @@ function CPGReferencesSection({ references }) {
 export function CarePlanSection() {
   const { state, updateCarePlanItem, updateMedication, finalizePlan, goToStep } = useApp();
   const { isDark, accent } = useTheme();
-  const { carePlan, patientData, selectedDiagnosis } = state;
-  
+  const { carePlan, patientData, diagnosis } = state;
+
+  // Get selected diagnoses (supports multiple selection)
+  const selectedIds = diagnosis?.selectedDiagnosisIds?.length > 0
+    ? diagnosis.selectedDiagnosisIds
+    : [diagnosis?.differentials?.[0]?.id].filter(Boolean);
+  const selectedDiagnoses = diagnosis?.differentials?.filter(
+    (d) => selectedIds.includes(d.id)
+  ) || [];
+
   // Local state for workflow and notes
   const [workflowStatus, setWorkflowStatus] = useState(WORKFLOW_STATES.DRAFT);
   const [workflowHistory, setWorkflowHistory] = useState([]);
@@ -459,16 +538,17 @@ export function CarePlanSection() {
   // Generate summary text for TTS
   const generateCarePlanSummary = () => {
     let summary = `Care Plan for ${patientData?.patientName || 'Patient'}. `;
-    summary += `Primary Diagnosis: ${selectedDiagnosis?.name || 'Not specified'}. `;
+    const diagnosisNames = selectedDiagnoses.map(d => d.name).join(', ') || 'Not specified';
+    summary += `${selectedDiagnoses.length > 1 ? 'Diagnoses' : 'Primary Diagnosis'}: ${diagnosisNames}. `;
     summary += `Clinical Summary: ${carePlan.clinicalSummary}. `;
-    
+
     if (carePlan.medications.start.length > 0) {
       summary += `New Medications to Start: ${carePlan.medications.start.map(m => m.name).join(', ')}. `;
     }
     if (carePlan.medications.stop.length > 0) {
       summary += `Medications to Stop: ${carePlan.medications.stop.map(m => m.name).join(', ')}. `;
     }
-    
+
     summary += `Follow-up: ${carePlan.disposition.followUp}.`;
     return summary;
   };
@@ -482,8 +562,8 @@ export function CarePlanSection() {
       </div>
 
       {/* Summary */}
-      <ClinicalSummary 
-        summary={carePlan.clinicalSummary} 
+      <ClinicalSummary
+        summary={carePlan.clinicalSummary}
         readSummaryButton={
           <TextToSpeechButton
             text={generateCarePlanSummary()}
@@ -548,12 +628,12 @@ export function CarePlanSection() {
           glow={workflowStatus === WORKFLOW_STATES.APPROVED}
           className="min-w-[250px]"
         >
-          {workflowStatus === WORKFLOW_STATES.APPROVED 
-            ? 'Generate Report' 
+          {workflowStatus === WORKFLOW_STATES.APPROVED
+            ? 'Generate Report'
             : 'Approval Required'}
         </Button>
       </div>
-      
+
       {workflowStatus !== WORKFLOW_STATES.APPROVED && (
         <p className="text-center text-sm text-slate-500">
           Approve the care plan above to generate report
